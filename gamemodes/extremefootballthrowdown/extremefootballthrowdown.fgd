@@ -1,0 +1,76 @@
+///////////////////////////////////////////////////////////////////////////////////
+// NoXiousNet EFT FGD - Last Edit by Benjy (October 9th 2012)                    //
+// If there are any bugs with this file, or any additions that need to be made   //
+// make a post at: http://www.noxiousnet.com/forums/index.php?topic=14910        //		
+///////////////////////////////////////////////////////////////////////////////////
+
+@include "base.fgd"
+@include "halflife2.fgd"
+@include "hl2mp.fgd"
+
+@BaseClass base(Targetname) = NoXToggle
+[
+	// Inputs
+	input seton(integer) : "0 for off, 1 for on."
+	input enable(void) : "Same as seton 1."
+	input disable(void) : "Same as seton 0."
+]
+
+@BaseClass = EFTGoal
+[
+	teamid(choices) : "Team" : 1 : "The team's goal point." =
+	[
+		1 : "Red"
+		2 : "Blue"
+	]
+	points(integer) : "Points Per Goal" : 1 : "Number of points that is given when scoring."
+]
+
+@PointClass base(Angles) studio("models/editor/playerstart.mdl") color( 255 0 0 ) = info_player_red : "EFT: People on team red spawn here."
+[
+]
+
+@PointClass base(Angles) studio("models/editor/playerstart.mdl") color( 255 255 255 ) = info_player_spectator : "EFT: People who want to spectate spawn here."
+[
+]
+
+@PointClass base(Angles) studio("models/editor/playerstart.mdl") color( 0 0 255 ) = info_player_blue : "EFT: People on team green spawn here."
+[
+]
+
+@PointClass base(Angles) studio("models/roller.mdl") = prop_ball : "EFT: Where the ball spawns."
+[
+	output onreturnhome(void) 		: "Called when the ball returns to the spawn position."
+	output ondropped(void) 			: "Activator is the carrier who dropped the ball."
+	output onthrown(void)			: "Activator is the player who threw the ball."
+	output onpickedup(void)			: "Activator is the player who picks up the ball."
+	output onpickedupbyred(void) 	: "Same as onpickedup but for red only."
+	output onpickedupbyblue(void) 	: "Same as onpickedup but for blue only."
+]
+
+@PointClass base(Angles,EFTGoal) = prop_goal : "EFT: Where the boring, basic goal spawns."
+[
+]
+
+@SolidClass base(EFTGoal) = trigger_goal : "EFT: Change how the player should score with the ball."
+[
+	scoretype(choices) : "Score Type" : 1 : "EFT: Sets the score type." =
+	[
+		0 : "No Scoring"
+		1 : "Touch Only"
+		2 : "Throw Only"
+		3 : "Touch And Throw"
+	]
+	input setscoretype(integer) : "Change the score type of this entity."
+]
+
+@SolidClass = trigger_ballreset : "EFT: Change how the player should score with the ball."
+[
+	enabled(choices) : "Start Enabled" : 1 : "Start on." =
+	[
+		1 : "Yes"
+		0 : "No"
+	]
+	input setenabled(integer) : "Enables or Disables this entitiy."
+]
+	

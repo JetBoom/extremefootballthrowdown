@@ -1,0 +1,20 @@
+"extremefootballthrowdown"
+{
+	"base"				"fretta13"
+	"title"				"Extreme Football Throwdown"
+	"menusystem"		"1"
+	"maps"				"^xft_|^eft_"
+	"workshopid"		"104625632"
+
+	"selectable"		"1"
+	"fretta_maps"
+	{
+		"1"	"xft_"
+		"2"	"eft"
+	}
+	"description"		"The only football gamemode you will ever want to play."
+
+	"author_name"	"William 'JetBoom' Moodhe"
+	"author_email"	"williammoodhe@gmail.com"
+	"author_url"	"http://www.noxiousnet.com"
+}
