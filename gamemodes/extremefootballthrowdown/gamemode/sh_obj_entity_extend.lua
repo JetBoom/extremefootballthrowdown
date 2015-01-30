@@ -82,7 +82,7 @@ function meta:FireOutput(outpt, activator, caller, args)
 				if delay == nil or delay <= 0 then
 					subent:Input(tab.input, activator, caller, ((tab.args == "") and args) or tab.args)
 				else
-					timer.Simple(delay, function() if subent:IsValid() then subent:Input(tab.input, activator, caller, tab.args) end end)
+					timer.Simple(delay, function() if subent:IsValid() then subent:Input(tab.input, activator, caller, ((tab.args == "") and args) or tab.args) end end)
 				end
 			end
 		end
