@@ -27,7 +27,7 @@ function meta:IsFriend()
 	return self.m_IsFriend
 end
 
-timer.Create("checkfriend", 1, 0, function()
+timer.Create("checkfriend", 5, 0, function()
 	-- This probably isn't the fastest function in the world so I cache it.
 	for _, pl in pairs(player.GetAll()) do
 		pl.m_IsFriend = pl:GetFriendStatus() == "friend"

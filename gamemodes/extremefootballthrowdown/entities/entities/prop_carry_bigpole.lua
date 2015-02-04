@@ -32,6 +32,8 @@ function ENT:KeyPress(pl, key)
 	elseif key == IN_ATTACK2 then
 		if pl:CanThrow() then
 			pl:SetState(STATE_THROW)
+		elseif pl:GetState() == STATE_BIGPOLEATTACK and not pl:GetStateBool() and CurTime() < pl:GetStateStart() + STATES[STATE_BIGPOLEATTACK].HitTime then
+			pl:EndState()
 		end
 
 		return true

@@ -1,5 +1,9 @@
 STATE.Time = 0.66
 
+function STATE:NoSuicide(pl)
+	return true
+end
+
 function STATE:ImmuneToAll(pl)
 	return true
 end

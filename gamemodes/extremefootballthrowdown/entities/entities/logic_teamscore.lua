@@ -20,8 +20,5 @@ function ENT:AcceptInput(name, activator, caller, args)
 	elseif name == "setenabled" then
 		self:SetKeyValue("enabled", args)
 		return true
-	elseif name == "getscore" then
-		self:Input("ongetredscore", activator, caller, team.GetScore(TEAM_RED))
-		self:Input("ongetbluescore", activator, caller, team.GetScore(TEAM_BLUE))
 	end
 end

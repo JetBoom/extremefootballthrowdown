@@ -79,7 +79,11 @@ local function draw_SimpleText(text, font, x, y, colour, xalign, yalign)
 	end
 
 	surface_SetTextPos(x, y)
-	surface_SetTextColor(colour.r, colour.g, colour.b, colour.a)
+	if colour then
+		surface_SetTextColor(colour.r, colour.g, colour.b, colour.a)
+	else
+		surface_SetTextColor(255, 255, 255, 255)
+	end
 	surface_DrawText(text)
 end
 
@@ -136,6 +140,8 @@ local function draw_Text(tab)
 	local font = tab.font or "DermaDefault"
 	local x = tab.pos[1] or 0
 	local y = tab.pos[2] or 0
+	local xalign = tab.xalign
+	local yalign = tab.yalign
 
 	surface_SetFont(font)
 

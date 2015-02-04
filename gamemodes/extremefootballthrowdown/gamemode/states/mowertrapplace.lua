@@ -1,6 +1,4 @@
-STATE.CanPickup = false
-
-STATE.Time = 2
+STATE.Time = 1.2
 
 function STATE:Started(pl, oldstate)
 	pl:ResetJumpPower(0)

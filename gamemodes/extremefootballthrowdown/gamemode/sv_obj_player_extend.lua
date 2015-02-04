@@ -110,11 +110,25 @@ function meta:GetChargeImmunity(pl)
 	return self.m_ChargeImmunity[pl] or 0
 end
 
+function meta:SetDiveTackleThrowAwayTime(time)
+	self.m_DiveTackleThrowAwayTime = time
+end
+
+function meta:GetDiveTackleThrowAwayTime()
+	return self.m_DiveTackleThrowAwayTime or 0
+end
+
+function meta:ChargeLaunch(hitent, knockdown)
+	hitent:ThrowFromPosition(self:GetLaunchPos(), self:GetVelocity():Length() * 1.65, knockdown, self)
+end
+
 function meta:ChargeHit(hitent, tr)
 	if hitent:ImmuneToAll() then return end
 
+	self:SetLastChargeHit(CurTime())
+
 	local knockdown = CurTime() >= hitent:GetKnockdownImmunity(self)
-	hitent:ThrowFromPosition(self:GetLaunchPos(), self:GetVelocity():Length() * 1.65, knockdown, self)
+	self:ChargeLaunch(hitent, knockdown)
 	hitent:ResetChargeImmunity(self)
 	if knockdown then
 		hitent:ResetKnockdownImmunity(self)

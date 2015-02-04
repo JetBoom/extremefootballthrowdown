@@ -7,6 +7,8 @@ ENT.Name = "Arcane Wand"
 
 ENT.IsPropWeapon = true
 
+ENT.DropChance = 0.8
+
 ENT.Model = Model("models/weapons/w_stunbaton.mdl")
 ENT.ThrowForce = 900
 

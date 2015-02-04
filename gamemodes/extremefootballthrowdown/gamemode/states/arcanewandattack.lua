@@ -1,5 +1,3 @@
-STATE.CanPickup = false
-
 STATE.Time = 3.2
 
 function STATE:Started(pl, oldstate)

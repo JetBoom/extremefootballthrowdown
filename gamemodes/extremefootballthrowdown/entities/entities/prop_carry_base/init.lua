@@ -60,7 +60,7 @@ end
 
 function ENT:Touch(ent)
 	if ent:IsPlayer() and not self:GetCarrier():IsValid() and ent:Alive() and not ent:IsCarrying() and self:GetVelocity():Length() < 200
-	and ent:GetStateTable().CanPickup and (self:GetLastCarrier() ~= ent or CurTime() > (self.m_PickupImmunity or 0))
+	and ent:CallStateFunction("CanPickup", self) and (self:GetLastCarrier() ~= ent or CurTime() > (self.m_PickupImmunity or 0))
 	and (ent:Team() ~= self:GetLastCarrierTeam() or CurTime() > (self.m_TeamPickupImmunity or 0)) then
 		if ent:KeyDown(IN_USE) then
 			self:SetCarrier(ent)

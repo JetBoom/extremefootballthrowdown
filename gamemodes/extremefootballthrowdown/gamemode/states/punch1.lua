@@ -1,13 +1,13 @@
-STATE.CanPickup = true
-
 STATE.Time = 0.5
 --STATE.Time = 0.6
 --STATE.HitTime = 0.33
 
+function STATE:CanPickup(pl, ent)
+	return true
+end
+
 function STATE:Started(pl, oldstate)
 	pl:ResetJumpPower(0)
-
-	pl:SetStateBool(false)
 
 	if SERVER then
 		pl:EmitSound("npc/zombie/claw_miss"..math.random(2)..".wav", 72, math.Rand(97, 103))
@@ -60,15 +60,6 @@ end
 function STATE:Think(pl)
 	if not (pl:IsOnGround() and pl:WaterLevel() < 2) then
 		pl:EndState(true)
-	--[[elseif SERVER and not pl:GetStateBool() and CurTime() >= pl:GetStateStart() + self.HitTime then
-		pl:SetStateBool(true)
-
-		for _, tr in ipairs(pl:GetTargets()) do
-			local hitent = tr.Entity
-			if hitent:IsPlayer() then
-				pl:PunchHit(hitent, tr)
-			end
-		end]]
 	end
 end
 

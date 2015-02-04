@@ -217,7 +217,7 @@ function ENT:Touch(ent)
 	if self:CallStateFunction("PreTouch", ent) then return end
 
 	if ent:IsPlayer() and not self:GetCarrier():IsValid() and ent:Alive() and not ent:IsCarrying()
-	and ent:GetStateTable().CanPickup and (self:GetLastCarrier() ~= ent or CurTime() > (self.m_PickupImmunity or 0))
+	and ent:CallStateFunction("CanPickup", self) and (self:GetLastCarrier() ~= ent or CurTime() > (self.m_PickupImmunity or 0))
 	and (ent:Team() ~= self:GetLastCarrierTeam() or CurTime() > (self.m_TeamPickupImmunity or 0)) then
 		if team.HasPlayers(ent:Team() == TEAM_RED and TEAM_BLUE or TEAM_RED) then
 			self:SetCarrier(ent)
@@ -242,13 +242,13 @@ function ENT:EndTouch(ent)
 	self:CallStateFunction("EndTouch", ent)
 end
 
-function ENT:Drop(thrown)
+function ENT:Drop(throwforce, suicide)
 	self.m_PickupImmunity = CurTime() + 1
 
 	local carrier = self:GetCarrier()
 	if carrier:IsValid() then
 		self:SetCarrier(NULL)
-		if not thrown then
+		if not throwforce and not suicide then
 			local phys = self:GetPhysicsObject()
 			if phys:IsValid() then
 				phys:Wake()
@@ -256,7 +256,7 @@ function ENT:Drop(thrown)
 			end
 		end
 
-		if thrown then
+		if throwforce then
 			GAMEMODE:BroadcastAction(carrier:Name(), "threw the ball!")
 			self.m_TeamPickupImmunity = CurTime() + 0.25
 		else
@@ -264,7 +264,7 @@ function ENT:Drop(thrown)
 		end
 	end
 
-	if thrown then
+	if throwforce then
 		self:Input("onthrown", carrier, carrier)
 
 		if carrier:IsValid() then
@@ -286,14 +286,14 @@ function ENT:Drop(thrown)
 		end
 	end
 
-	self:CallStateFunction("Dropped", thrown, carrier)
+	self:CallStateFunction("Dropped", throwforce, carrier)
 end
 
 util.PrecacheSound("npc/turret_floor/click1.wav")
 function ENT:PhysicsCollide(data, phys)
 	if data.HitNormal.z <= -0.75 and util.TraceLine({start = data.HitPos - data.HitNormal, endpos = data.HitPos + data.HitNormal, filter = self, mask = MASK_SOLID_BRUSHONLY}).HitSky then
 		self:ReturnHome()
-	else
+	elseif not self:CallStateFunction("PhysicsCollide", data, phys) then
 		if 30 < data.Speed and 0.2 < data.DeltaTime then
 			self:EmitSound("npc/turret_floor/click1.wav")
 		end
@@ -301,8 +301,6 @@ function ENT:PhysicsCollide(data, phys)
 		local normal = data.OurOldVelocity:GetNormalized()
 		phys:SetVelocityInstantaneous(data.Speed * 0.75 * (2 * data.HitNormal * data.HitNormal:Dot(normal * -1) + normal))
 	end
-
-	self:CallStateFunction("PhysicsCollide", data, phys)
 end
 
 function ENT:AcceptInput(name, activator, caller, args)

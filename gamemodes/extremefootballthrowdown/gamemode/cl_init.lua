@@ -8,6 +8,19 @@ include("animationsapi/cl_animeditor.lua")
 
 include("cl_postprocess.lua")
 
+GM.LerpRateOn = 10
+GM.LerpRateOff = 8
+
+
+local OldHealth = 0
+local LastHealthLoss = 0
+local PrevFrameHealth = 100
+local color_black_alpha160 = Color(0, 0, 0, 160)
+local color_black_alpha90 = Color(0, 0, 0, 90)
+
+local tempColRed = Color(1, 1, 1)
+local tempColBlue = Color(1, 1, 1)
+
 MySelf = MySelf or NULL
 hook.Add("InitPostEntity", "GetLocal", function()
 	MySelf = LocalPlayer()
@@ -18,9 +31,6 @@ hook.Add("InitPostEntity", "GetLocal", function()
 end)
 
 language.Add("prop_ball", "Ball")
-
-local color_black_alpha160 = Color(0, 0, 0, 160)
-local color_black_alpha90 = Color(0, 0, 0, 90)
 
 function GM:HookGetLocal()
 	self.CreateMove = self._CreateMove
@@ -67,7 +77,7 @@ function GM:_CreateMove(cmd)
 	self.CameraYawLerp = math.Approach(self.CameraYawLerp, 0, FrameTime() * math.max(15, math.abs(self.CameraYawLerp) ^ 1.15))
 	self.PrevCameraYaw = ang.yaw
 
-	return MySelf:CallStateFunction("CreateMove", cmd) or self.BaseClass.CreateMove(self, cmd)
+	--return MySelf:CallStateFunction("CreateMove", cmd) or self.BaseClass.CreateMove(self, cmd)
 end
 
 function GM:CreateMoveTaunt(cmd)
@@ -79,16 +89,59 @@ function GM:_PrePlayerDraw(pl)
 	return pl:CallStateFunction("PrePlayerDraw")
 end
 
+local HealthBarDistance = 1024
+local HealthBarDistanceEnemy = 768
 local colFriend = Color(10, 255, 10, 200)
 local colFriendOT = Color(255, 160, 0, 200)
 local matFriendRing = Material("SGM/playercircle")
 function GM:_PostPlayerDraw(pl)
-	if pl ~= MySelf and pl:IsFriend() then
-		local pos = pl:GetPos() + Vector(0, 0, 0.5)
-		local col = pl:Team() == MySelf:Team() and colFriend or colFriendOT
-		render.SetMaterial(matFriendRing)
-		render.DrawQuadEasy(pos, Vector(0, 0, 1), 32, 32, col)
-		render.DrawQuadEasy(pos, Vector(0, 0, -1), 32, 32, col)
+	if pl ~= MySelf then
+		local myteam = MySelf:Team()
+		local isobs = myteam == TEAM_SPECTATOR
+		local teamid = pl:Team()
+		local pos = pl:GetPos() + Vector(0, 0, 10)
+
+		if pl:IsFriend() then
+			local col = teamid == myteam and colFriend or colFriendOT
+			render.SetMaterial(matFriendRing)
+			render.DrawQuadEasy(pos, Vector(0, 0, 1), 32, 32, col)
+			render.DrawQuadEasy(pos, Vector(0, 0, -1), 32, 32, col)
+		end
+
+		local eyepos = EyePos()
+		local dist = pos:Distance(eyepos)
+		local maxdist = teamid == myteam and HealthBarDistance or HealthBarDistanceEnemy
+		if isobs or pos:Distance(eyepos) <= maxdist then
+			local camang = EyeAngles3D2D()
+			local col = teamid == TEAM_RED and tempColRed or tempColBlue
+			local fade
+			if not isobs and dist > maxdist / 2 then
+				fade = 1 - (dist - maxdist / 2) / maxdist * 2
+			else
+				fade = 1
+			end
+
+			col.a = fade * 255
+			if pl:Health() < 25 then
+				col.a = col.a * math.abs(math.sin((CurTime() + pl:EntIndex()) * 7))
+			end
+
+			camang[3] = 90
+
+			--render.PushFilterMin(TEXFILTER.ANISOTROPIC)
+			--render.PushFilterMag(TEXFILTER.ANISOTROPIC)
+
+			cam.Start3D2D(pos + camang:Up() * 20, camang, 0.1 + fade * 0.1)
+			--cam.IgnoreZ(true)
+
+			draw.SimpleText(pl:Name().." ("..pl:Health().."%)", "eft_3dothernametext", 0, 0, col, TEXT_ALIGN_CENTER)
+
+			--cam.IgnoreZ(false)
+			cam.End3D2D()
+
+			--render.PopFilterMin()
+			--render.PopFilterMag()
+		end
 	end
 
 	return pl:CallStateFunction("PostPlayerDraw")
@@ -99,6 +152,7 @@ local LookBehindAngles = {
 	[4] = Angle(0, 0, -30),
 	[6] = Angle(0, 0, -80)
 }
+local visibletrace = {mask = MASK_SOLID_BRUSHONLY}
 function GM:Think()
 	self.BaseClass.Think(self)
 
@@ -142,6 +196,24 @@ function GM:Think()
 				end 
 			end
 		end
+
+		if pl == lp then
+			self:HealthThink(pl)
+		end
+	end
+end
+
+function GM:HealthThink(pl)
+	local newhealth = pl:Health()
+	if newhealth ~= PrevFrameHealth then
+		if newhealth < PrevFrameHealth then
+			LastHealthLoss = CurTime()
+			OldHealth = PrevFrameHealth
+		else
+			LastHealthLoss = 0
+			OldHealth = newhealth
+		end
+		PrevFrameHealth = newhealth
 	end
 end
 
@@ -290,6 +362,7 @@ function GM:Draw3DHUD()
 		if team.Joinable(MySelf:Team()) and MySelf:Team() ~= TEAM_SPECTATE then
 			self:Draw3DHealthBar()
 			self:Draw3DWeapon()
+			self:Draw3DPotentialWeapon()
 			self:Draw3DGoalIndicator()
 
 			MySelf:CallStateFunction("Draw3DHUD")
@@ -303,9 +376,25 @@ function GM:Draw3DHUD()
 	cam.End3D()
 end
 
+local PotentialWeaponName = ""
+local PotentialWeaponLerp = 0
+local colBG = Color(0, 0, 0, 0)
 function GM:Draw3DPotentialWeapon()
-	local wep = MySelf:GetPotentialCarry()
-	if not wep or not wep:IsValid() or not wep.GetCarrier or wep:GetCarrier():IsValid() or not wep.Name then return end
+	local pwep = MySelf:GetPotentialCarry()
+	local wep = MySelf:GetCarry()
+	if not IsValid(wep) and pwep and pwep:IsValid() and pwep.GetCarrier and not pwep:GetCarrier():IsValid() and pwep.Name then
+		PotentialWeaponName = string.upper(pwep.Name)
+		PotentialWeaponLerp = math.Approach(PotentialWeaponLerp, 1, FrameTime() * self.LerpRateOn)
+	else
+		PotentialWeaponLerp = math.Approach(PotentialWeaponLerp, 0, FrameTime() * self.LerpRateOff)
+	end
+
+	if PotentialWeaponLerp == 0 then return end
+
+	colBG.a = PotentialWeaponLerp * 90
+
+	local col = Color(HSVtoRGB((CurTime() * 180) % 360))
+	col.a = PotentialWeaponLerp * 255
 
 	local w, h = 460, 40
 
@@ -318,7 +407,7 @@ function GM:Draw3DPotentialWeapon()
 	cam.Start3D2D(EyePos3D2DScreen(0, -300), camang, 1)
 
 		draw.RoundedBox(16, w * -0.5, 0, w, h, color_black_alpha90)
-		draw.SimpleText("["..(input.LookupBinding("+use") or "USE").."] PICK UP "..string.upper(wep.Name), "eft_3dteamscore", 0, h / 2, Color(HSVtoRGB((CurTime() * 180) % 360)), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+		draw.SimpleText("["..(input.LookupBinding("+use") or "USE").."] PICK UP "..PotentialWeaponName, "eft_3dteamscore", 0, h / 2, col, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 
 	cam.End3D2D()
 	cam.IgnoreZ(false)
@@ -326,11 +415,23 @@ function GM:Draw3DPotentialWeapon()
 	--render.PopFilterMag()
 end
 
+local WeaponName = ""
+local WeaponLerp = 0
 function GM:Draw3DWeapon()
 	local wep = MySelf:GetCarry()
-	if not IsValid(wep) or not wep.Name then
-		return self:Draw3DPotentialWeapon()
+	if wep and wep:IsValid() and wep.Name then
+		WeaponName = string.upper(wep.Name)
+		WeaponLerp = math.Approach(WeaponLerp, 1, FrameTime() * self.LerpRateOn)
+	else
+		WeaponLerp = math.Approach(WeaponLerp, 0, FrameTime() * self.LerpRateOff)
 	end
+
+	if WeaponLerp == 0 then return end
+
+	colBG.a = WeaponLerp * 90
+
+	local col = Color(HSVtoRGB((CurTime() * 180) % 360))
+	col.a = WeaponLerp * 255
 
 	local w, h = 300, 40
 
@@ -343,7 +444,7 @@ function GM:Draw3DWeapon()
 	cam.Start3D2D(EyePos3D2DScreen(400, -450), camang, 1)
 
 		draw.RoundedBox(16, w * -0.5, 0, w, h, color_black_alpha90)
-		draw.SimpleText(string.upper(wep.Name).."!", "eft_3dteamscore", 0, h / 2, Color(HSVtoRGB((CurTime() * 180) % 360)), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+		draw.SimpleText(WeaponName.."!", "eft_3dteamscore", 0, h / 2, col, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 
 	cam.End3D2D()
 	cam.IgnoreZ(false)
@@ -393,6 +494,7 @@ function GM:Initialize()
 	surface.CreateFont("eft_3dpoweruptimetext",  {font = "coolvetica", size = 48, weight = 0, antialias = false, shadow = false, outline = true})
 	surface.CreateFont("eft_3dheadertext",  {font = "coolvetica", size = 72, weight = 500, antialias = false, shadow = false, outline = true})
 	surface.CreateFont("eft_3dnametext",  {font = "coolvetica", size = 32, weight = 0, antialias = false, shadow = false, outline = true})
+	surface.CreateFont("eft_3dothernametext",  {font = "coolvetica", size = 48, weight = 0, antialias = false, shadow = false, outline = true})
 	surface.CreateFont("eft_3dteamname",  {font = "coolvetica", size = 24, weight = 0, antialias = false, shadow = false, outline = true})
 	surface.CreateFont("eft_3dteamscore",  {font = "coolvetica", size = 40, weight = 0, antialias = false, shadow = false, outline = true})
 	surface.CreateFont("eft_3dpity",  {font = "coolvetica", size = 28, weight = 0, antialias = false, shadow = false, outline = true})
@@ -401,6 +503,9 @@ function GM:Initialize()
 	surface.CreateFont("eft_3dwinnertext",  {font = "coolvetica", size = 128, weight = 500, antialias = false, shadow = false, outline = true})
 
 	self:RegisterWeapons()
+
+	tempColRed = table.Copy(team.GetColor(TEAM_RED))
+	tempColBlue = table.Copy(team.GetColor(TEAM_BLUE))
 
 	hook.Remove("PrePlayerDraw", "DrawPlayerRing")
 end
@@ -514,7 +619,7 @@ function GM:Draw3DRoundWinner()
 	cam.IgnoreZ(true)
 	cam.Start3D2D(EyePos3D2DScreen(1200 - self.RoundEndScroll * 2400, 40), ang, size)
 
-		draw.SimpleText("TOUCH DOWN!!", "eft_3dwinnertext", 0, 0, barcol, TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
+		draw.SimpleText(self.RoundHomeRun and "HOME RUN!!" or "TOUCH DOWN!!", "eft_3dwinnertext", 0, 0, barcol, TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
 
 	cam.End3D2D()
 	cam.IgnoreZ(false)
@@ -602,9 +707,16 @@ local colPlusIcon = Color(255, 255, 255)
 function GM:Draw3DHealthBar()
 	local w, h = 320, 52
 	local time = CurTime()
-	local health = LocalPlayer():Health()
+	local health = OldHealth
+	local lp = LocalPlayer()
+	local realhealth = lp:Health()
+	local d
 
-	if health <= 25 then
+	if health ~= realhealth then
+		d = math.Clamp(1 - (time - LastHealthLoss) * 2, 0, 1)
+	end
+
+	if realhealth <= 25 then
 		colPlusIcon.a = 10 + math.abs(math.sin(time * 10) * 245)
 	else
 		colPlusIcon.a = 255
@@ -626,7 +738,7 @@ function GM:Draw3DHealthBar()
 
 		draw.SimpleText("HP", "eft_3dhealthbar", w * 0.05, h * 0.5, colPlusIcon, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 
-		if health > 0 then
+		if lp:Alive() and health > 0 then
 			local numbox = 50
 			local bw = (w - boxw) / numbox * (0.75 + math.sin(time * 2) * 0.01)
 			local space = bw * 1.5
@@ -636,8 +748,14 @@ function GM:Draw3DHealthBar()
 
 				local bh = h * math.abs(math.sin(time * 3 + i * 0.8)) + i * h * 0.01
 
-				local r, g, b = HSVtoRGB((time * 60 + i) % 360)
-				surface.SetDrawColor(r, g, b, 220)
+				if realhealth < i then
+					surface.SetDrawColor(255, 255, 255, d * 220)
+					--bh = bh * (1 + d * 0.5)
+				else
+					local r, g, b = HSVtoRGB((time * 60 + i) % 360)
+					surface.SetDrawColor(r, g, b, 220)
+				end
+
 				surface.DrawRect(hx, (h - bh) / 2, bw, bh)
 
 				hx = hx + space
@@ -785,40 +903,31 @@ function GM:CalcView(pl, origin, angles, fov, znear, zfar)
 	return self.BaseClass.CalcView(self, pl, origin, angles, lerpfov, znear, zfar)
 end
 
-local colNameBG1 = Color(0, 0, 0, 120)
-local colNameBG2 = Color(0, 0, 0, 50)
-local traceTargetID = {mask = MASK_SOLID}
 function GM:HUDDrawTargetID()
-	local eyepos = EyePos()
-	traceTargetID.start = eyepos
-	traceTargetID.endpos = eyepos + EyeVector() * 1024
-	traceTargetID.filter = MySelf
-	local tr = util.TraceLine(traceTargetID)
-	local pl = tr.Entity
-	if not (pl and pl:IsValid() and pl:IsPlayer()) then return end
+end
 
-	local font = "TargetID"
-	local text = pl:Name()
-	local col = team.GetColor(pl:Team())
+GM.CurrentTransition = TRANSITION_SLIDE
+function GM:RenderScreenspaceEffects()
+	self:DoPostProcessing()
 
-	local x = ScrW() / 2
-	local y = ScrH() / 2
-
-	y = y + 30
-
-	draw.SimpleText(text, font, x + 1, y + 1, colNameBG1, TEXT_ALIGN_CENTER)
-	draw.SimpleText(text, font, x + 2, y + 2, colNameBG2, TEXT_ALIGN_CENTER)
-	draw.SimpleText(text, font, x, y, col, TEXT_ALIGN_CENTER)
-
-	local w, h = surface.GetTextSize(text)
-	y = y + h + 5
-
-	local text = pl:Health() .. "%"
-	local font = "TargetIDSmall"
-
-	draw.SimpleText(text, font, x + 1, y + 1, colNameBG1, TEXT_ALIGN_CENTER)
-	draw.SimpleText(text, font, x + 2, y + 2, colNameBG2, TEXT_ALIGN_CENTER)
-	draw.SimpleText(text, font, x, y, col, TEXT_ALIGN_CENTER)
+	--[[local curtime = CurTime()
+	local starttime = GetGlobalFloat("RoundStartTime", 0)
+	if math.abs(curtime - starttime) <= 0.5 then
+		surface.SetDrawColor(0, 0, 0, 255)
+		surface.DrawRect(0, 0, ScrW(), ScrH())
+	elseif curtime < starttime then
+		if curtime >= starttime - 1.5 then
+			local delta = math.min(starttime - (curtime - 0.5), 1)
+			if delta > 0 then
+				TRANSITIONS[self.CurrentTransition]:In(delta, ScrW(), ScrH())
+			end
+		end
+	elseif curtime < starttime + 1.5 then
+		local delta = 1 - math.min((curtime + 0.5) - starttime, 1)
+		if delta > 0 then
+			TRANSITIONS[self.CurrentTransition]:Out(delta, ScrW(), ScrH())
+		end
+	end]]
 end
 
 local color_black_alpha60 = Color(10, 10, 10, 60)
@@ -935,12 +1044,12 @@ end
 
 function GM:UpdateHUD_Alive( InRound )
 
-	if ( GAMEMODE.RoundBased || GAMEMODE.TeamBased ) then
+	--if ( GAMEMODE.RoundBased || GAMEMODE.TeamBased ) then
 	
 		local Bar = vgui.Create( "DHudBar" )
 		GAMEMODE:AddHUDItem( Bar, 2 )
 
-		if ( GAMEMODE.TeamBased && GAMEMODE.ShowTeamName ) then
+		--if ( GAMEMODE.TeamBased && GAMEMODE.ShowTeamName ) then
 		
 			local TeamIndicator = vgui.Create( "DHudUpdater" );
 				TeamIndicator:SizeToContents()
@@ -953,9 +1062,9 @@ function GM:UpdateHUD_Alive( InRound )
 				TeamIndicator:SetFont( "HudSelectionText" )
 			Bar:AddItem( TeamIndicator )
 			
-		end
+		--end
 		
-		if ( GAMEMODE.RoundBased ) then 
+		--if ( GAMEMODE.RoundBased ) then 
 		
 			local RoundNumber = vgui.Create( "DHudUpdater" );
 				RoundNumber:SizeToContents()
@@ -971,9 +1080,9 @@ function GM:UpdateHUD_Alive( InRound )
 				RoundTimer:SetLabel( "TIME" )
 			Bar:AddItem( RoundTimer )
 
-		end
+		--end
 		
-	end
+	--end
 
 end
 
@@ -982,7 +1091,9 @@ function GM:EndOfGame(winner)
 	self.GameEndTime = CurTime()
 end
 
-function GM:TeamScored(teamid, hitter, points)
+function GM:TeamScored(teamid, hitter, points, homerun)
+	self.CurrentTransition = math.random(#TRANSITIONS)
+
 	if not MySelf:IsValid() then return end
 
 	if teamid == MySelf:Team() or not team.Joinable(MySelf:Team()) then
@@ -994,13 +1105,15 @@ function GM:TeamScored(teamid, hitter, points)
 	self.RoundWinner = teamid
 	self.RoundEndScroll = 0
 	self.RoundEndCameraTime = RealTime()
+	self.RoundHomeRun = homerun
 end
 net.Receive("eft_teamscored", function(length)
 	local teamid = net.ReadUInt(8)
 	local pl = net.ReadEntity()
 	local points = net.ReadUInt(8)
+	local homerun = net.ReadBit() == 1
 
-	gamemode.Call("TeamScored", teamid, pl, points)
+	gamemode.Call("TeamScored", teamid, pl, points, homerun)
 end)
 
 net.Receive("eft_localsound", function(length)

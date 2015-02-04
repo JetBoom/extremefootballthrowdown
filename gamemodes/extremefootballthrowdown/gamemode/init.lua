@@ -9,6 +9,7 @@ AddCSLuaFile("sh_obj_player_extend.lua")
 
 AddCSLuaFile("sh_states.lua")
 AddCSLuaFile("sh_voice.lua")
+AddCSLuaFile("sh_translate.lua")
 
 AddCSLuaFile("sh_animations.lua")
 
@@ -22,13 +23,10 @@ include("sv_obj_player_extend.lua")
 
 --[[
 effects for ramming in to someone.
-interceptions. This is defined as catching the ball after it has been thrown and has been in the air for at least half a second. It is worth 1 point.
 Throwdown combo counter. Every time you knock someone down who isn't on the ground already, your combo goes up. If you die or get knocked down it resets. The game will announce people who reach particular combos.
 ball powerup: Pounder Ball. The ball is encased in a big bowling ball. The carrier is slightly slower but the ball will create shock waves when it bounces. Hitting other people with the ball will do enhanced damage and knock back.
 ball powerup: Gravity Ball. The ball glows purple. The carrier's gravity is reduced and the ball's gravity is dramatically reduced.
 ball powerup: Homing Ball. The ball glows pink and has pink contrails encircling it. The ball will, when thrown, home in on to the nearest team member of the last thrower that isn't them.
-ball powerup: Ice Ball. The ball is encased in an ice cube. The ball has the ability to slide on the ground as if it were an ice cube.
-ball powerup: Surf Ball. The ball glows light blue and has water particles coming out of it. The carrier gets the ability to run on water and the ball treats the surface of water as if it were concrete.
 ball powerup: Ultimate Ball. The ball glows multiple colors. The carrier is immune to everything except trigger_hurts and runs at normal speed. Anyone who comes close to the carrier will be thrown away.
 ]]
 
@@ -111,6 +109,8 @@ function GM:IsSpawnpointSuitable(pl, spawnpointent, bMakeSuitable)
 end
 
 function GM:CanPlayerSuicide(pl)
+	if not self:InRound() then return false end
+
 	if self.TieBreaker then
 		if pl:Alive() and pl:GetState() == STATE_FIGHTER2D and pl:GetStateInteger() ~= STATE_FIGHTER2D_LOSE then
 			pl:SetStateInteger(STATE_FIGHTER2D_LOSE)
@@ -120,6 +120,13 @@ function GM:CanPlayerSuicide(pl)
 
 		return false
 	end
+
+	local ball = self:GetBall()
+	if ball:IsValid() and ball:GetCarrier() == pl then
+		return false
+	end
+
+	if pl:CallStateFunction("NoSuicide") then return false end
 
 	return self.BaseClass.CanPlayerSuicide(self, pl)
 end
@@ -147,6 +154,10 @@ function GM:PlayerSpawn(pl)
 	end
 
 	if not team.Joinable(pl:Team()) then return end
+
+	if CurTime() < GetGlobalFloat("RoundStartTime") and pl:Team() ~= TEAM_SPECTATOR and pl:Team() ~= TEAM_CONNECTING then
+		pl:Freeze(true)
+	end
 
 	for bonename, scale in pairs(self.BoneScales) do
 		local boneid = pl:LookupBone(bonename)
@@ -266,7 +277,7 @@ function GM:DoPlayerDeath(pl, attacker, dmginfo)
 	end
 
 	local carrying = pl:GetCarrying()
-	if carrying:IsValid() and carrying.Drop then carrying:Drop() end
+	if carrying:IsValid() and carrying.Drop then carrying:Drop(nil, attacker == pl) end
 
 	if not pl:CallStateFunction("DontCreateRagdoll", dmginfo) then
 		pl:CreateRagdoll()
@@ -313,7 +324,7 @@ function GM:SpawnRandomWeapon(silent)
 	for _, wepclass in pairs(weps) do
 		local tab = scripted_ents.GetStored(wepclass)
 		if tab then
-			local chance = tab.DropChance or 1
+			local chance = tab.t.DropChance or 1
 			randpick[wepclass] = {maxrandom, maxrandom + chance}
 			maxrandom = maxrandom + chance
 		end
@@ -367,6 +378,7 @@ function GM:Initialize()
 	resource.AddFile("materials/noxctf/sprite_bloodspray7.vmt")
 	resource.AddFile("materials/noxctf/sprite_bloodspray8.vmt")
 	resource.AddFile("sound/eft/ballreset.ogg")
+	resource.AddFile("sound/eft/bigpole_swing.ogg")
 
 	if self.ForceMappackDownload then
 		resource.AddWorkshop("244859331")
@@ -483,7 +495,7 @@ function GM:OnPreRoundStart(num)
 
 	timer.Create("SpawnRandomWeapon", 10, 0, function() GAMEMODE:SpawnRandomWeapon() end)
 
-	for i=1, 2 + math.random(3) do
+	for i=1, math.random(3, 5) do
 		self:SpawnRandomWeapon(true)
 	end
 end
@@ -534,13 +546,19 @@ function GM:TeamScored(teamid, hitter, points, istouch)
 		end
 	end
 
+	local ball = GAMEMODE:GetBall()
+
 	net.Start("eft_teamscored")
 		net.WriteUInt(teamid, 8)
 		net.WriteEntity(hitter)
 		net.WriteUInt(points, 8)
+		if ball:IsValid() and ball.LastBigPoleHit and ball.LastBigPoleHit == hitter and CurTime() < ball.LastBigPoleHitTime + 5 and not istouch then
+			net.WriteBit(true)
+		else
+			net.WriteBit(false)
+		end
 	net.Broadcast()
 
-	local ball = GAMEMODE:GetBall()
 	for _, ent in pairs(ents.FindByClass("logic_teamscore")) do
 		ent:Input("onscore", hitter, ball)
 		if teamid == TEAM_RED then

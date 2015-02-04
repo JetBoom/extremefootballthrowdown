@@ -1,5 +1,3 @@
-STATE.CanPickup = true
-
 STATE.Time = 2
 
 function STATE:Started(pl, oldstate)
@@ -12,6 +10,10 @@ end
 
 function STATE:IsIdle(pl)
 	return false
+end
+
+function STATE:CanPickup(pl, ent)
+	return true
 end
 
 function STATE:Move(pl, move)

@@ -92,14 +92,29 @@ GM.BoneScales = {
 	["ValveBiped.Bip01_L_Clavicle"]	= Vector(3.000000, 1.500000, 1.500000)
 }
 
-include("sh_states.lua")
-include("sh_voice.lua")
 include("sh_animations.lua")
+include("sh_states.lua")
+include("sh_roundtransitions.lua")
+include("sh_voice.lua")
+include("sh_translate.lua")
 
 include("sh_obj_entity_extend.lua")
 include("sh_obj_player_extend.lua")
 
 IncludePlayerClasses()
+
+function GM:EntityEmitSound(snd)
+	if game.GetTimeScale() ~= 1 then
+		local ent = snd.Entity
+		if ent and ent:IsValid() then
+			if ent:IsPlayer() or ent:GetMoveType() ~= MOVETYPE_NONE then
+				snd.Pitch = math.Clamp(snd.Pitch * math.Clamp(game.GetTimeScale() ^ 0.6, 0.4, 3), 10, 255)
+				snd.DSP = 21
+				return true
+			end
+		end
+	end
+end
 
 function GM:PlayerShouldTaunt(pl, actid)
 	return pl:IsIdle() and not pl:IsPlayingTaunt() and pl:Alive() and pl:OnGround() and pl:GetMoveType() == MOVETYPE_WALK
@@ -261,11 +276,26 @@ function GM:KeyPress(pl, key)
 
 	if key == IN_ATTACK then
 		if pl:CanMelee() then
-			pl:SetState(STATE_PUNCH1, STATES[STATE_PUNCH1].Time)
+			local vel = pl:GetVelocity()
+			local dir = vel:GetNormalized()
+			local speed = vel:Length() * dir:Dot(pl:GetForward())
+			if speed >= 290 and CurTime() >= pl:GetLastChargeHit() + 0.4 and pl:GetCarry() ~= self:GetBall() then
+				pl:SetState(STATE_DIVETACKLE)
+			else
+				local state = STATE_PUNCH1
+				--[[for _, tr in pairs(pl:GetTargets()) do
+					local hitent = tr.Entity
+					if hitent:IsPlayer() and hitent:GetState() == STATE_KNOCKEDDOWN then
+						state = STATE_KICK1
+						break
+					end
+				end]]
+
+				pl:SetState(state, STATES[state].Time)
+			end
 		end
 	elseif key == IN_WALK then
 		if SERVER and pl:IsIdle() and not pl:IsCarrying() then
-			pl:KnockDown()
 			if pl:OnGround() then
 				local dir = vector_origin
 				if pl:KeyDown(IN_FORWARD) then
@@ -281,12 +311,13 @@ function GM:KeyPress(pl, key)
 					dir = dir - pl:GetRight()
 				end
 
-				if dir ~= vector_origin then
-					dir:Normalize()
-					dir = dir * 300
-					dir.z = 300
-					pl:SetNextMoveVelocity(dir)
-				end
+				pl:KnockDown()
+				dir:Normalize()
+				dir = dir * 300
+				dir.z = 300
+				pl:SetNextMoveVelocity(dir)
+			else
+				pl:KnockDown()
 			end
 		end
 	elseif key == IN_SPEED then
@@ -328,7 +359,7 @@ function GM:OnPlayerHitGround(pl, inwater, hitfloater, speed)
 			if damage >= 20 then
 				pl:KnockDown()
 			end
-			pl:TakeDamage(damage, DMG_FALL, game.GetWorld(), game.GetWorld(), pl:GetPos())
+			pl:TakeSpecialDamage(damage, DMG_FALL, game.GetWorld(), game.GetWorld(), pl:GetPos())
 			pl:EmitSound("player/pl_fallpain"..(math.random(0, 1) == 1 and 3 or 1)..".wav")
 		end
 	end

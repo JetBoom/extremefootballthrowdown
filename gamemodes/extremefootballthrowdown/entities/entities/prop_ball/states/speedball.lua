@@ -54,8 +54,12 @@ function STATE:PostDraw(ball)
 	ball.NextStateEmit = CurTime() + 0.01
 
 	local vel = carrier:IsValid() and carrier:GetVelocity() or ball:GetVelocity()
+	local pos = ball:GetPos()
 
-	local particle = ball.Emitter:Add("sprites/glow04_noz", ball:GetPos())
+	local emitter = ParticleEmitter(pos)
+	emitter:SetNearClip(16, 24)
+
+	local particle = emitter:Add("sprites/glow04_noz", ball:GetPos())
 	particle:SetDieTime(math.Rand(1.7, 2.5))
 	particle:SetStartSize(3)
 	particle:SetEndSize(0)
@@ -66,4 +70,6 @@ function STATE:PostDraw(ball)
 	particle:SetColor(255, 255, 120)
 	particle:SetRoll(math.Rand(0, 360))
 	particle:SetRollDelta(math.Rand(-15, 15))
+
+	emitter:Finish()
 end

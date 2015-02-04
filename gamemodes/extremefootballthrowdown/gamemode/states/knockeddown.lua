@@ -1,6 +1,7 @@
 KD_STATE_NONE = 0
 KD_STATE_WALLSLAM = 1
 KD_STATE_GETTINGUP = 2
+KD_STATE_DIVETACKLED = 3
 
 function STATE:Started(pl, oldstate)
 	if SERVER then
@@ -10,12 +11,22 @@ function STATE:Started(pl, oldstate)
 	end
 
 	pl:SetStateInteger(KD_STATE_NONE)
+	pl:SetStateBool(math.random(2) == 1)
 
 	pl:ResetJumpPower(0)
 end
 
+function STATE:Restarted(pl)
+	local rag = pl:GetRagdollEntity()
+	if not rag or not rag:IsValid() then
+		pl:CreateRagdoll()
+	end
+end
+
 function STATE:Ended(pl, newstate)
 	if SERVER then
+		pl.HighJumping = nil
+
 		local rag = pl:GetRagdollEntity()
 		if rag and rag:IsValid() then
 			rag:Remove()
@@ -51,6 +62,10 @@ function STATE:IsIdle(pl)
 	return false
 end
 
+function STATE:CanPickup(pl, ent)
+	return pl.HighJumping
+end
+
 function STATE:Move(pl, move)
 	move:SetSideSpeed(0)
 	move:SetForwardSpeed(0)
@@ -60,14 +75,39 @@ function STATE:Move(pl, move)
 	return MOVE_STOP
 end
 
+function STATE:CalcMainActivity(pl)
+	pl.CalcSeqOverride = pl:LookupSequence(pl:GetStateBool() and "zombie_slump_rise_02_fast" or "zombie_slump_rise_01")
+
+	return true
+end
+
+function STATE:UpdateAnimation(pl)
+	local delta = 1 - (pl:GetStateEnd() - CurTime())
+	pl:SetCycle(delta * 0.5 ^ 0.5 * 0.8 + 0.1)
+	pl:SetPlaybackRate(0)
+
+	return true
+end
+
 if SERVER then
 
 function STATE:Think(pl)
 	local state = pl:GetStateInteger()
 	if state == KD_STATE_GETTINGUP then return end
 
+	if state == KD_STATE_DIVETACKLED then
+		local tackler = pl:GetStateEntity()
+		if tackler:IsValid() and tackler:IsPlayer() and tackler:Alive() and tackler:GetState() == STATE_DIVETACKLE then
+			pl:SetLocalVelocity(tackler:GetVelocity() * 1.02)
+			return
+		else
+			state = KD_STATE_NONE
+			pl:SetStateInteger(state)
+		end
+	end
+
 	if state == KD_STATE_WALLSLAM then
-		if pl:IsOnGround() or pl:WaterLevel() >= 2 then
+		if pl:IsOnGround() or pl:IsOnPlayer() or pl:WaterLevel() >= 2 then
 			pl:SetStateInteger(KD_STATE_NONE)
 			pl:SetStateEnd(CurTime() + 1)
 		elseif pl._KNOCKDOWNWALLFREEZE then
@@ -83,6 +123,10 @@ function STATE:Think(pl)
 				pl:SetStateEnd(CurTime() + 1)
 			else
 				pl:SetStateInteger(KD_STATE_GETTINGUP)
+				local rag = pl:GetRagdollEntity()
+				if rag and rag:IsValid() then
+					rag:Remove()
+				end
 			end
 		else
 			local heading = pl:GetVelocity()
@@ -120,7 +164,7 @@ end
 if not CLIENT then return end
 
 local ShadowControlSlam = {maxspeed = 5000, maxspeeddamp = 1000, maxangular = 2000, maxangulardamp = 10000, dampfactor = 0.85, teleportdistance = 160}
-function STATE:ComputeShadowControl(pl, rag, pos, ang, bonename)
+function STATE:ComputeShadowControl(pl, rag, pos, ang, bonename, teledist)
 	local rphys = rag:GetPhysicsObject()
 	if rphys and rphys:IsValid() then
 		rphys:Wake()
@@ -136,6 +180,7 @@ function STATE:ComputeShadowControl(pl, rag, pos, ang, bonename)
 	if phys and phys:IsValid() then
 		ShadowControlSlam.pos = pos or phys:GetPos()
 		ShadowControlSlam.angle = ang or phys:GetAngles()
+		ShadowControlSlam.teleportdistance = teledist or 160
 
 		phys:Wake()
 		phys:ComputeShadowControl(ShadowControlSlam)
@@ -153,6 +198,17 @@ function STATE:Think(pl)
 
 	if pl:GetStateInteger() == KD_STATE_WALLSLAM then
 		self:WallSlamThink(pl, rag)
+	elseif pl:GetStateInteger() == KD_STATE_DIVETACKLED then
+		local tackler = pl:GetStateEntity()
+		if tackler:IsValid() and tackler:IsPlayer() then
+			local otherhandid = tackler:LookupBone("ValveBiped.Bip01_R_Hand")
+			if otherhandid and otherhandid > 0 then
+				local pos, ang = tackler:GetBonePosition(otherhandid)
+				if pos then
+					self:ComputeShadowControl(pl, rag, pos, nil, "ValveBiped.Bip01_Spine2", 1)
+				end
+			end
+		end
 	else
 		local endtime = pl:GetStateEnd()
 		if endtime > 0 and endtime - 0.65 <= CurTime() then
@@ -209,5 +265,8 @@ function STATE:WallSlamThink(pl, rag)
 end
 
 function STATE:PrePlayerDraw(pl)
-	return true
+	local rag = pl:GetRagdollEntity()
+	if rag and rag:IsValid() then
+		return true
+	end
 end

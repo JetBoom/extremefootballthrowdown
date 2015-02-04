@@ -1,68 +1,39 @@
-STATE.Name = "Water Ball"
-
-STATE.NoWaterReturn = true
+STATE.Name = "Ice Ball"
 
 if SERVER then
 	function STATE:Start(ball, samestate)
 		ball:EmitSound("vehicles/Airboat/pontoon_splash2.wav", 90, 100)
-
-		local phys = ball:GetPhysicsObject()
-		if phys:IsValid() then
-			phys:SetBuoyancyRatio(2)
-		end
 	end
 
 	function STATE:End(ball)
 		ball:EmitSound("vehicles/Airboat/pontoon_impact_hard2.wav", 90, 150)
-
-		local phys = ball:GetPhysicsObject()
-		if phys:IsValid() then
-			phys:SetBuoyancyRatio(0.05)
-		end
-
-		self:RemoveWaterPlatform(ball)
 	end
 
-	function STATE:Think(ball)
-		local carrier = ball:GetCarrier()
-		if carrier:IsValid() then
-			self:SpawnWaterPlatform(ball, carrier)
-		else
-			self:RemoveWaterPlatform(ball)
-		end
-	end
+	function STATE:PhysicsCollide(ball, hitdata, phys)
+		if hitdata.HitNormal.z >= 0.5 then
+			phys:SetVelocityInstantaneous(hitdata.OurOldVelocity * (1 - hitdata.DeltaTime * 0.05))
 
-	function STATE:SpawnWaterPlatform(ball, carrier)
-		if IsValid(ball._WaterBallPlatform) then return end
-
-		local ent = ents.Create("prop_waterballplatform")
-		if ent:IsValid() then
-			ent:SetPos(ball:GetPos())
-			ent:SetOwner(ball)
-			ent:Spawn()
-			ent:SetPlayer(carrier)
-			ent:AlignToCarrier()
-			ball._WaterBallPlatform = ent
-		end
-	end
-
-	function STATE:RemoveWaterPlatform(ball)
-		if IsValid(ball._WaterBallPlatform) then
-			ball._WaterBallPlatform:Remove()
-			ball._WaterBallPlatform = nil
+			return true
 		end
 	end
 end
 
-local colBall = Color(0, 120, 255)
+local colBall = Color(0, 255, 255)
 function STATE:GetBallColor(ball, carrier)
 	return colBall
 end
 
 if not CLIENT then return end
 
+local matShiny = Material("models/shiny")
+function STATE:PreDraw(ball)
+	render.ModelMaterialOverride(matShiny)
+end
+
 local vecGrav = Vector(0, 0, -400)
 function STATE:PostDraw(ball)
+	render.ModelMaterialOverride()
+
 	if CurTime() < ball.NextStateEmit then return end
 	ball.NextStateEmit = CurTime() + 0.01
 
@@ -73,7 +44,7 @@ function STATE:PostDraw(ball)
 	local emitter = ParticleEmitter(pos)
 	emitter:SetNearClip(16, 24)
 
-	local particle = emitter:Add("Effects/splash"..math.random(4), ball:GetPos())
+	local particle = emitter:Add("particle/snow", ball:GetPos())
 	particle:SetDieTime(math.Rand(1.7, 2.5))
 	particle:SetStartSize(3)
 	particle:SetEndSize(0)

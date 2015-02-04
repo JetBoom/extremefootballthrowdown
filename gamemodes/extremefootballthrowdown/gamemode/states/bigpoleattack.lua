@@ -1,8 +1,7 @@
-STATE.CanPickup = false
-
 STATE.Time = 1
 STATE.HitTime = 0.6
 STATE.Range = 128
+STATE.FOV = 140
 
 function STATE:Started(pl, oldstate)
 	pl:ResetJumpPower(0)
@@ -84,13 +83,47 @@ function STATE:Think(pl)
 	elseif SERVER and not pl:GetStateBool() and CurTime() >= pl:GetStateStart() + self.HitTime then
 		pl:SetStateBool(true)
 		if SERVER then
-			pl:EmitSound("weapons/iceaxe/iceaxe_swing1.wav", 72, math.Rand(35, 45))
+			pl:EmitSound("eft/bigpole_swing.ogg", 75, math.random(97, 103))
 		end
 
-		for _, tr in ipairs(pl:GetTargets(self.Range)) do
+		for _, tr in ipairs(pl:GetSweepTargets(self.Range, self.FOV, nil, nil, true)) do
 			local hitent = tr.Entity
 			if hitent:IsPlayer() and not hitent:ImmuneToAll() then
 				self:HitEntity(pl, hitent, tr)
+			end
+		end
+
+		if SERVER then
+			local ball = GAMEMODE:GetBall()
+			if not ball:GetCarrier():IsValid() then
+				local ballpos = ball:GetPos()
+				local eyepos = pl:EyePos()
+				if ballpos:Distance(eyepos) <= self.Range and util.IsVisible(ballpos, eyepos) then
+					local eyevector = pl:EyeAngles()
+					eyevector.pitch = 0
+					eyevector = eyevector:Forward()
+
+					local dir = ballpos - eyepos
+					dir:Normalize()
+					if eyevector:Dot(dir) >= 0.4 then
+						if CurTime() >= (NEXTHOMERUN or 0) then
+							NEXTHOMERUN = CurTime() + 5
+							GAMEMODE:SlowTime(0.25, 2)
+						end
+
+						ball.LastBigPoleHit = pl
+						ball.LastBigPoleHitTime = CurTime()
+						ball:SetLastCarrier(pl)
+						ball:SetAutoReturn(0)
+						ball:EmitSound("weapons/physcannon/energy_sing_explosion2.wav", 90, math.Rand(95, 105))
+						local phys = ball:GetPhysicsObject()
+						if phys:IsValid() then
+							local ang = dir:Angle()
+							ang.pitch = -35
+							phys:SetVelocityInstantaneous(ang:Forward() * 1300)
+						end
+					end
+				end
 			end
 		end
 	end

@@ -1,6 +1,8 @@
-STATE.CanPickup = true
-
 function STATE:IsIdle(pl)
+	return true
+end
+
+function STATE:CanPickup(pl, ent)
 	return true
 end
 
@@ -8,10 +10,27 @@ function STATE:Started(pl, oldstate)
 	pl:ResetJumpPower()
 
 	pl:SetStateInteger(pl:KeyDown(IN_ATTACK2) and 1 or pl:KeyDown(IN_RELOAD) and -1 or 0)
+	pl:SetStateNumber(0)
+end
+
+function STATE:Think(pl)
+	self:HighJumpThink(pl)
+end
+
+function STATE:HighJumpThink(pl)
+	if pl:GetStateNumber() == 0 then
+		if pl:Crouching() and pl:IsOnGround() and pl:GetVelocity():Length() <= 16 and not pl:IsCarrying() then
+			pl:SetStateNumber(CurTime() + 1)
+		end
+	elseif not pl:Crouching() or not pl:OnGround() or pl:GetVelocity():Length() > 16 or pl:IsCarrying() then
+		pl:SetStateNumber(0)
+	end
 end
 
 if SERVER then
 function STATE:Think(pl)
+	self:HighJumpThink(pl)
+
 	if not pl:CanCharge() then return end
 
 	for _, tr in pairs(pl:GetTargets()) do
@@ -56,11 +75,33 @@ function STATE:KeyPress(pl, key)
 		pl:SetStateInteger(1)
 	elseif key == IN_RELOAD then
 		pl:SetStateInteger(-1)
+	elseif key == IN_JUMP and self:CanHighJump(pl) then
+		pl:SetState(STATE_HIGHJUMP, 5)
 	end
+end
+
+function STATE:CanHighJump(pl)
+	return pl:Crouching() and pl:OnGround() and CurTime() >= pl:GetStateNumber() and pl:GetStateNumber() > 0 and not pl:IsCarrying()
 end
 
 function STATE:KeyRelease(pl, key)
 	if key == IN_ATTACK2 and pl:GetStateInteger() == 1 or key == IN_RELOAD and pl:GetStateInteger() == -1 then
 		pl:SetStateInteger(0)
+	end
+end
+
+local skip = false
+local matWhite = Material("models/debug/debugwhite")
+function STATE:PostPlayerDraw(pl)
+	if not skip and pl:GetStateNumber() > 0 and CurTime() >= pl:GetStateNumber() then
+		skip = true
+		pl.SkipDrawHooks = true
+		render.ModelMaterialOverride(matWhite)
+		render.SetBlend(math.abs(math.sin(CurTime() * 14)) * 0.4)
+		pl:DrawModel()
+		render.SetBlend(1)
+		render.ModelMaterialOverride()
+		pl.SkipDrawHooks = nil
+		skip = false
 	end
 end

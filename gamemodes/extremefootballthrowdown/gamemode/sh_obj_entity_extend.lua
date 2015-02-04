@@ -80,9 +80,9 @@ function meta:FireOutput(outpt, activator, caller, args)
 			for __, subent in pairs(self:FindByNameHammer(tab.entityname, activator, caller)) do
 				local delay = tonumber(tab.delay)
 				if delay == nil or delay <= 0 then
-					subent:Input(tab.input, activator, caller, ((tab.args == "") and args) or tab.args)
+					subent:Input(tab.input, activator, caller, tab.args)
 				else
-					timer.Simple(delay, function() if subent:IsValid() then subent:Input(tab.input, activator, caller, ((tab.args == "") and args) or tab.args) end end)
+					timer.Simple(delay, function() if subent:IsValid() then subent:Input(tab.input, activator, caller, tab.args) end end)
 				end
 			end
 		end

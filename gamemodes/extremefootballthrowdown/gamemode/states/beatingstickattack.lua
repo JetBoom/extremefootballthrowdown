@@ -1,8 +1,7 @@
-STATE.CanPickup = false
-
 STATE.Time = 0.55
 STATE.HitTime = 0.18
 STATE.Range = 64
+STATE.FOV = 90
 
 function STATE:Started(pl, oldstate)
 	pl:ResetJumpPower(0)
@@ -88,7 +87,7 @@ function STATE:Think(pl)
 	elseif SERVER and not pl:GetStateBool() and CurTime() >= pl:GetStateStart() + self.HitTime then
 		pl:SetStateBool(true)
 
-		for _, tr in ipairs(pl:GetTargets(self.Range)) do
+		for _, tr in ipairs(pl:GetSweepTargets(self.Range, self.FOV)) do
 			local hitent = tr.Entity
 			if hitent:IsPlayer() and not hitent:ImmuneToAll() then
 				self:HitEntity(pl, hitent, tr)

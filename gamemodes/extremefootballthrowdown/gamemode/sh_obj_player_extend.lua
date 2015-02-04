@@ -19,7 +19,9 @@ function meta:SetState(state, duration, ent, nocallended)
 		self:SetStateEntity(NULL)
 	end
 
-	if oldstate ~= state then
+	if oldstate == state then
+		self:CallForcedStateFunction(state, "Restarted")
+	else
 		self:CallForcedStateFunction(state, "Started", oldstate)
 	end
 end
@@ -65,6 +67,45 @@ function meta:ThinkSelf()
 	end
 
 	self:CallStateFunction("Think")
+end
+
+function meta:IsOnPlayer()
+	local pos = self:GetPos()
+
+	local hitent = util.TraceLine({start = pos, endpos = pos + Vector(0, 0, -16), mins = self:OBBMins() * 0.9, maxs = self:OBBMaxs() * 0.9, filter = team.GetPlayers(self:Team()), ignoreworld = true}).Entity
+
+	return hitent and hitent:IsValid() and hitent:IsPlayer()
+end
+
+local function nocollidetimer(self, timername)
+	if self:IsValid() then
+		for _, e in pairs(ents.FindInBox(self:WorldSpaceAABB())) do
+			if e:IsPlayer() and e ~= self and GAMEMODE:ShouldCollide(self, e) then
+				return
+			end
+		end
+
+		self:SetCollisionGroup(COLLISION_GROUP_PLAYER)
+	end
+
+	timer.Destroy(timername)
+end
+
+function meta:TemporaryNoCollide(force)
+	if self:GetCollisionGroup() ~= COLLISION_GROUP_PLAYER and not force then return end
+
+	for _, e in pairs(ents.FindInBox(self:WorldSpaceAABB())) do
+		if e:IsPlayer() and e ~= self and GAMEMODE:ShouldCollide(self, e) then
+			self:SetCollisionGroup(COLLISION_GROUP_DEBRIS_TRIGGER)
+
+			local timername = "TemporaryNoCollide"..self:UniqueID()
+			timer.CreateEx(timername, 0, 0, nocollidetimer, self, timername)
+
+			return
+		end
+	end
+
+	self:SetCollisionGroup(COLLISION_GROUP_PLAYER)
 end
 
 function meta:GetCarry()
@@ -120,9 +161,19 @@ function meta:CallCarryFunction(name, ...)
 	end
 end
 
-function meta:GetTraceFilter()
+function meta:SetLastChargeHit(time)
+	self:SetDTFloat(3, time)
+end
+
+function meta:GetLastChargeHit()
+	return self:GetDTFloat(3)
+end
+
+function meta:GetTraceFilter(excludeball)
 	local filter = team.GetPlayers(self:Team())
-	filter[#filter + 1] = GAMEMODE.Ball
+	if not excludeball then
+		filter[#filter + 1] = GAMEMODE.Ball
+	end
 	filter[#filter + 1] = GAMEMODE.BallTrigger
 	return filter
 end
@@ -140,19 +191,109 @@ function meta:GetTargetTrace()
 	return util.TraceHull({start = start, endpos = start + self:GetForward() * self:BoundingRadius(), mins = self:OBBMins() * 0.75, maxs = self:OBBMaxs() * 0.75, filter = self:GetTraceFilter(), mask = MASK_SHOT})
 end
 
-function meta:GetTargets(range, addfilter)
+function meta:GetSweepTargets(range, fov, addfilter, cross, excludeball)
 	local traces = {}
 
-	local filter = self:GetTraceFilter()
+	range = range or self:BoundingRadius()
+	fov = fov or 45
+	size = size or 8
+
+	local ang = self:EyeAngles()
+	local up = ang:Up()
+	local maxs = size * 0.5 * Vector(1, 1, 1)
+
+	ang:RotateAroundAxis(up, fov * -0.5)
+
+	local filter = self:GetTraceFilter(excludeball)
+	if addfilter then
+		table.Add(filter, addfilter)
+	end
+
+	local start = self:WorldSpaceCenter()
+	local trace = {start = start, mins = maxs * -1, maxs = maxs, filter = filter, mask = MASK_SHOT}
+
+	for a=0, fov, 2 do
+		ang:RotateAroundAxis(up, 2)
+		trace.endpos = start + ang:Forward() * (range - size / 2)
+
+		for i=1, 20 do
+			local tr = util.TraceHull(trace)
+			local ent = tr.Entity
+			if ent and ent:IsValid() then
+				table.insert(traces, tr)
+				table.insert(trace.filter, ent)
+			else
+				break
+			end
+		end
+
+		for i=1, 20 do
+			local tr = util.TraceLine(trace)
+			local ent = tr.Entity
+			if ent and ent:IsValid() then
+				table.insert(traces, tr)
+				table.insert(trace.filter, ent)
+			else
+				break
+			end
+		end
+	end
+
+	if cross then
+		ang = self:EyeAngles()
+		local right = ang:Up()
+
+		ang:RotateAroundAxis(right, fov * -0.5)
+
+		local start = self:WorldSpaceCenter()
+		local trace = {start = start, mins = maxs * -1, maxs = maxs, filter = filter, mask = MASK_SHOT}
+
+		for a=0, fov, 2 do
+			ang:RotateAroundAxis(right, 2)
+			trace.endpos = start + ang:Forward() * (range - size / 2)
+
+			for i=1, 20 do
+				local tr = util.TraceHull(trace)
+				local ent = tr.Entity
+				if ent and ent:IsValid() then
+					table.insert(traces, tr)
+					table.insert(trace.filter, ent)
+				else
+					break
+				end
+			end
+
+			for i=1, 20 do
+				local tr = util.TraceLine(trace)
+				local ent = tr.Entity
+				if ent and ent:IsValid() then
+					table.insert(traces, tr)
+					table.insert(trace.filter, ent)
+				else
+					break
+				end
+			end
+		end
+	end
+
+	return traces
+end
+
+function meta:GetTargets(range, addfilter, fatness, excludeball)
+	fatness = fatness or 0.75
+
+	local traces = {}
+
+	local filter = self:GetTraceFilter(excludeball)
 	if addfilter then
 		table.Add(filter, addfilter)
 	end
 
 	range = range or self:BoundingRadius()
-	local start = self:LocalToWorld(self:OBBCenter())
-	local trace = {start = start, endpos = start + self:GetForward() * range, mins = self:OBBMins() * 0.75, maxs = self:OBBMaxs() * 0.75, filter = filter, mask = MASK_SHOT}
+	local start = self:WorldSpaceCenter()
+	local trace = {start = start, endpos = start + self:GetForward() * range, mins = self:OBBMins() * fatness, maxs = self:OBBMaxs() * fatness, filter = filter, mask = MASK_SHOT}
 
-	for i=1, 50 do
+	for i=1, 20 do
 		local tr = util.TraceHull(trace)
 		local ent = tr.Entity
 		if ent and ent:IsValid() then
@@ -164,7 +305,7 @@ function meta:GetTargets(range, addfilter)
 	end
 
 	-- Fixes being able to hide in tight spaces.
-	for i=1, 50 do
+	for i=1, 20 do
 		local tr = util.TraceLine(trace)
 		local ent = tr.Entity
 		if ent and ent:IsValid() then

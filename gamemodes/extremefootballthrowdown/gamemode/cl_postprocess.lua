@@ -1,6 +1,6 @@
-local ColorModTimeSlow = {
+local ColorModTime = {
 	["$pp_colour_contrast"] = 1,
-	["$pp_colour_colour"] = 1,
+	["$pp_colour_colour"] = 0,
 	["$pp_colour_addr"] = 0,
 	["$pp_colour_addg"] = 0,
 	["$pp_colour_addb"] = 0,
@@ -10,12 +10,18 @@ local ColorModTimeSlow = {
 	["$pp_colour_mulb"] = 0
 }
 
-function GM:RenderScreenspaceEffects()
+function GM:DoPostProcessing()
 	if render.GetDXLevel() < 80 then return end
 
-	ColorModTimeSlow["$pp_colour_colour"] = math.Approach(ColorModTimeSlow["$pp_colour_colour"], 1.6 - math.Clamp(game.GetTimeScale(), 0, 1) * 0.6, RealFrameTime() * 2)
+	local target = 1.6 - math.Clamp(game.GetTimeScale(), 0, 1) * 0.6
 
-	if ColorModTimeSlow["$pp_colour_colour"] ~= 1 then
-		DrawColorModify(ColorModTimeSlow)
+	if CurTime() < GetGlobalFloat("RoundStartTime", 0) then
+		target = target * 0.05
+	end
+
+	ColorModTime["$pp_colour_colour"] = math.Approach(ColorModTime["$pp_colour_colour"], target, RealFrameTime() * 2)
+
+	if ColorModTime["$pp_colour_colour"] ~= 1 then
+		DrawColorModify(ColorModTime)
 	end
 end

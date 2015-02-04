@@ -2,6 +2,7 @@ STATE.Time = 0.9
 
 function STATE:Started(pl, oldstate)
 	pl:Freeze(true)
+	pl:SetStateBool(math.random(2) == 1)
 end
 
 function STATE:Ended(pl, newstate)
@@ -20,7 +21,7 @@ function STATE:IsIdle(pl)
 end
 
 function STATE:CalcMainActivity(pl, velocity)
-	pl.CalcSeqOverride = pl:LookupSequence("death_01")
+	pl.CalcSeqOverride = pl:LookupSequence(pl:GetStateBool() and "death_01" or "death_03")
 end
 
 function STATE:GetCycle(pl)

@@ -20,12 +20,12 @@ function STATE:Ended(pl, newstate)
 
 			local throwpos
 			if util.TraceLine({start = pl:GetPos() + Vector(0, 0, 4), endpos = pl:GetPos() + Vector(0, 0, pl:OBBMaxs().z + 4), mask = MASK_SOLID_BRUSHONLY}).Hit then
-				throwpos = pl:LocalToWorld(pl:OBBCenter())
+				throwpos = pl:WorldSpaceCenter()
 			else
 				throwpos = pl:GetShootPos()
 			end
 
-			carrying:Drop(true)
+			carrying:Drop(throwforce)
 			carrying:EmitSound("weapons/stinger_fire1.wav", 76, 100)
 			carrying:SetPos(throwpos)
 

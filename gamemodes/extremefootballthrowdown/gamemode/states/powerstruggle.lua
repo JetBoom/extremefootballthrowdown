@@ -23,6 +23,10 @@ STATE.KeyBindings = {
 	[IN_MOVERIGHT] = "+moveright"
 }
 
+function STATE:NoSuicide(pl)
+	return true
+end
+
 function STATE:ImmuneToAll(pl)
 	return true
 end

@@ -1,3 +1,11 @@
+if SERVER then
+	include("animationsapi/boneanimlib.lua")
+end
+
+if CLIENT then
+	include("animationsapi/cl_boneanimlib.lua")
+end
+
 function GM:HandlePlayerSwimming(pl, velocity)
 	if not pl:IsSwimming() then return false end
 	
@@ -10,7 +18,17 @@ function GM:HandlePlayerSwimming(pl, velocity)
 	return true
 end
 
+local FrozenSequences = {
+	"pose_standing_01",
+	"pose_standing_02",
+	"idle_suitcase"
+}
+
 function GM:CalcMainActivity(pl, velocity)
+	if pl:IsFrozen() and CurTime() < GetGlobalFloat("RoundStartTime", 0) then
+		return 1, pl:LookupSequence(FrozenSequences[(pl:EntIndex() + pl:Frags()) % #FrozenSequences + 1])
+	end
+
 	pl.CalcIdeal = ACT_MP_STAND_IDLE
 	pl.CalcSeqOverride = -1
 

@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////
-// NoXiousNet EFT FGD                                                            //
+// NoXiousNet EFT FGD - Last Edit by Benjy (October 9th 2012)                    //
 // If there are any bugs with this file, or any additions that need to be made   //
 // make a post at: http://www.noxiousnet.com/forums/index.php?topic=14910        //		
 ///////////////////////////////////////////////////////////////////////////////////
@@ -11,12 +11,12 @@
 @BaseClass base(Targetname) = NoXToggle
 [
 	// Inputs
-	input seton(integer)    : "0 for off, 1 for on."
-	input enable(void)      : "Same as seton 1."
-	input disable(void)     : "Same as seton 0."
+	input seton(integer) : "0 for off, 1 for on."
+	input enable(void) : "Same as seton 1."
+	input disable(void) : "Same as seton 0."
 ]
 
-@BaseClass base(Targetname, Parentname) = EFTGoal
+@BaseClass = EFTGoal
 [
 	teamid(choices) : "Team" : 1 : "The team's goal point." =
 	[
@@ -26,31 +26,7 @@
 	points(integer) : "Points Per Goal" : 1 : "Number of points that is given when scoring."
 ]
 
-@PointClass base(Targetname) = logic_teamscore : "EFT: Called when a chosen team scores a point."
-[
-	enabled(choices) : "Start Enabled?" : 1 : "Does the entity start enabled?" =
-	[
-		0: "No"
-		1: "Yes"
-	]
-	
-	// Inputs
-	input setenabled(integer)   : "0 for off, 1 for on."
-	input getscore(void)        : "Fires outputs containing the scores of each team"
-	
-	// Outputs
-	output onscore(void)        : "Called when anyone scores."
-	output onredscore(void)     : "Called when Red team scores."
-	output onbluescore(void)    : "Called when Blue team scores."
-	output ongetredscore(void)  : "Called and outputs red score when getscore input is used."
-	output ongetbluescore(void) : "Called and outputs blue score when getscore input is used."
-]
-
 @PointClass base(Angles) studio("models/editor/playerstart.mdl") color( 255 0 0 ) = info_player_red : "EFT: People on team red spawn here."
-[
-]
-
-@PointClass = logic_norandomweapons : "EFT: Stops random weapons from being dropped at spawnpoints."
 [
 ]
 
@@ -62,74 +38,33 @@
 [
 ]
 
-@PointClass base(Targetname) studio("models/props_c17/oildrum001_explosive.mdl") color( 255 255 255 ) = prop_carry_barrel : "EFT: Spawns a Nitro Barrel."
+@PointClass base(Angles) studio("models/roller.mdl") = prop_ball : "EFT: Where the ball spawns."
 [
-]
-
-@PointClass base(Targetname) studio("models/props_vehicles/car002a.mdl") color( 255 255 255 ) = prop_carry_car : "EFT: Spawns a Clown Car."
-[
-]
-
-@PointClass base(Angles, Targetname) studio("models/props_junk/watermelon01.mdl") color( 255 255 255 ) = prop_carry_melon : "EFT: Spawns a Melon."
-[
-]
-
-@PointClass base(Targetname) studio("models/weapons/w_rocket_launcher.mdl") color( 255 255 255 ) = prop_carry_melondriver : "EFT: Spawns a Melon Driver."
-[
-]
-
-@PointClass base(Targetname) studio("models/props_trainstation/trashcan_indoor001b.mdl") color( 255 255 255 ) = prop_carry_trashbin : "EFT: Spawns a Trash Bin."
-[
-]
-
-@PointClass base(Targetname) studio("models/weapons/w_stunbaton.mdl") color( 128 128 255 ) = prop_carry_beatingstick : "EFT: Spawns a Beatdown Stick."
-[
-]
-@PointClass base(Targetname) studio("models/weapons/w_stunbaton.mdl") color( 255 128 128 ) = prop_carry_arcanewand : "EFT: Spawns an Arcane Wand."
-[
-]
-
-
-@PointClass base(Angles,Parentname) studio("models/roller.mdl") = prop_ball : "EFT: Where the ball spawns."
-[
-	output onreturnhome(void)     : "Called when the ball returns to the spawn position."
-	output ondropped(void)        : "Activator is the carrier who dropped the ball."
-	output ondroppedbyred(void)   : "Activator is the red player who dropped the ball."
-	output ondroppedbyblue(void)  : "Activator is the blue player who dropped the ball."
-	output onthrown(void)         : "Activator is the player who threw the ball."
-	output onthrownbyred(void)    : "Activator is the red player who threw the ball."
-    output onthrownbyblue(void)   : "Activator is the blue player who threw the ball."
-	output onpickedup(void)       : "Activator is the player who picks up the ball."
-	output onpickedupbyred(void)  : "Same as onpickedup but for red only."
-	output onpickedupbyblue(void) : "Same as onpickedup but for blue only."
+	output onreturnhome(void) 		: "Called when the ball returns to the spawn position."
+	output ondropped(void) 			: "Activator is the carrier who dropped the ball."
+	output onthrown(void)			: "Activator is the player who threw the ball."
+	output onpickedup(void)			: "Activator is the player who picks up the ball."
+	output onpickedupbyred(void) 	: "Same as onpickedup but for red only."
+	output onpickedupbyblue(void) 	: "Same as onpickedup but for blue only."
 ]
 
 @PointClass base(Angles,EFTGoal) = prop_goal : "EFT: Where the boring, basic goal spawns."
 [
 ]
 
-@PointClass base(Targetname) = env_teamsound : "EFT: Used to play sound when activated (can be either a sound file or in the format soundfile,pitch,volume)."
-[
-	input playtoall(string)        : "Enable this entity."
-	input playtored(string)        : "Choose if this entity is activated only on starting touch."
-	input playtoblue(string)       : "Choose if this entity overrides the object velocity."
-	input playtospectators(string) : "Choose if this entity pushes from the orgin."
-]
-
 @SolidClass base(EFTGoal) = trigger_goal : "EFT: Change how the player should score with the ball."
 [
-	scoretype(choices)             : "Score Type" : 1 : "EFT: Sets the score type." =
+	scoretype(choices) : "Score Type" : 1 : "EFT: Sets the score type." =
 	[
 		0 : "No Scoring"
 		1 : "Touch Only"
 		2 : "Throw Only"
 		3 : "Touch And Throw"
 	]
-	output onscore(void)           : "Called when this goal gets scored on."
-	input setscoretype(integer)    : "Change the score type of this entity."
+	input setscoretype(integer) : "Change the score type of this entity."
 ]
 
-@SolidClass base(Targetname, Parentname) = trigger_ballreset : "EFT: Change how the player should score with the ball."
+@SolidClass = trigger_ballreset : "EFT: Change how the player should score with the ball."
 [
 	enabled(choices) : "Start Enabled" : 1 : "Start on." =
 	[
@@ -138,99 +73,4 @@
 	]
 	input setenabled(integer) : "Enables or Disables this entitiy."
 ]
-
-@SolidClass base(Targetname, Parentname) = trigger_abspush : "EFT: Push mechanic for the gamemode."
-[
-	enabled(choices) : "Start Enabled" : 1 : "Is this entity enabled?" =
-	[
-		1 : "Yes"
-		0 : "No"
-	]
-	knockdown(choices) : "Knock Down" : 1 : "Triggers a ragdoll knockdown or not." =
-	[
-		1 : "Yes"
-		0 : "No"
-	]
-	starttouchonly(choices) : "Activate on Touch Only" : 1 : "Only trigger when object enters the field." =
-	[
-		1 : "Yes"
-		0 : "No"
-	]
-	overridevelocity(choices) : "Override Velocity" : 0 : "Should the velocity of the object be overriden instead of added to?" =
-	[
-		1 : "Yes"
-		0 : "No"
-	]
-	pushfromorigin(choices) : "Push from Origin" : 0 : "Push Velocity must be set on, pushes the object from the brushes origin." =
-	[
-		1 : "Yes"
-		0 : "No"
-	]
-	pushplayers(choices) : "Push Players" : 1 : "Push the players?" =
-	[
-		1 : "Yes"
-		0 : "No"
-	]
-	pushball(choices) : "Push Ball" : 1 : "Push the ball?" =
-	[
-		1 : "Yes"
-		0 : "No"
-	]
-	pushphysobjects(choices) : "Push Physics Objects" : 1 : "Push any physics object? Includes the ball but does not override when set to off" =
-	[
-		1 : "Yes"
-		0 : "No"
-	]
-	pushvelocity(string) : "Push Velocity" : "0 0 0" : "Should be either a vector or a number depending on what Push from Origin is set as."
 	
-	input setenabled(integer)          : "Enable this entity."
-	input setstarttouchonly(integer)   : "Choose if this entity is activated only on starting touch."
-	input setoverridevelocity(integer) : "Choose if this entity overrides the object velocity."
-	input setpushfromorigin(integer)   : "Choose if this entity pushes from the orgin."
-	input setpushplayers(integer)      : "Choose if this entity pushes players."
-	input setpushball(integer)         : "Choose if this entity pushes the ball."
-	input setpushphysobjects(integer)  : "Choose if this entity pushes any object."
-	input setpushvelocity(string)      : "Set a vector or number for the velocity."
-]
-	
-@SolidClass base(Targetname, Parentname) = trigger_knockdown : "EFT: Knockdown trigger for the gamemode."
-[
-	enabled(choices) : "Start Enabled" : 1 : "Is this entity enabled?" =
-	[
-		1 : "Yes"
-		0 : "No"
-	]
-	starttouchonly(choices) : "Activate on Touch Only" : 1 : "Only trigger when object enters the field." =
-	[
-		1 : "Yes"
-		0 : "No"
-	]
-	knockdowntime(float) : "Knockdown Time" : "3.0" : "Time in seconds to knock someone down."
-
-	input setenabled(integer)        : "Enable this entity."
-	input setstarttouchonly(integer) : "Choose if this entity is activated only on starting touch."
-	input setknockdowntime(float)    : "Set the time the player is knocked down for."
-	output onknockdown(void)         : "Activates when activator is knocked down."
-]
-
-@SolidClass base(Targetname, Parentname) = trigger_powerup : "EFT: Gives the ball a powerup when entering the volume."
-[
-	enabled(choices) : "Start Enabled" : 1 : "Is this entity enabled?" =
-	[
-		1 : "Yes"
-		0 : "No"
-	]
-	powerup(choices) : "Powerup" : "speedball" : "Which powerup to give the ball." =
-	[
-		"speedball"  : "Speed Ball"
-		"blitzball"  : "Blitz Ball"
-		"waterball"  : "Water Ball"
-		"magnetball" : "Magnet Ball"
-		"scoreball"  : "Score Ball"
-	]
-	poweruptime(integer) : "Powerup Time" : 20 : "How long the ball is powered up."
-
-	input setenabled(integer)     : "Enable this entity."
-	input setpoweruptime(integer) : "Set the powerup time."
-	input setpowerup(string)      : "Set which powerup the ball has."
-]

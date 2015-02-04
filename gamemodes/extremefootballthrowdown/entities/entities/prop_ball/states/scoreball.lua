@@ -28,10 +28,14 @@ function STATE:PostDraw(ball)
 
 	local carrier = ball:GetCarrier()
 	local vel = carrier:IsValid() and carrier:GetVelocity() or ball:GetVelocity()
-
 	local col = self:GetBallColor(ball)
+	local pos = ball:GetPos()
+
+	local emitter = ParticleEmitter(pos)
+	emitter:SetNearClip(16, 24)
+
 	for i=1, 2 do
-	local particle = ball.Emitter:Add("sprites/glow04_noz", ball:GetPos())
+		local particle = emitter:Add("sprites/glow04_noz", pos)
 		particle:SetDieTime(math.Rand(2.3, 2.5))
 		particle:SetStartSize(math.Rand(6, 8))
 		particle:SetEndSize(0)
@@ -46,4 +50,6 @@ function STATE:PostDraw(ball)
 		particle:SetRollDelta(math.Rand(-32, 32))
 		particle:SetColor(col.r, col.g, col.b)
 	end
+
+	emitter:Finish()
 end

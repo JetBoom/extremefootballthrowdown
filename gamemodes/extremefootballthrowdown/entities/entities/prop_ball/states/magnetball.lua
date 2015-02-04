@@ -18,7 +18,7 @@ if SERVER then
 		if ent:IsValid() then
 			ball:SetStateVector(ent:WorldToLocal(data.HitPos + data.HitNormal * 4))
 			ball:SetStateEntity(data.HitEntity)
-		else
+		elseif not data.HitSky then
 			ball:SetStateVector(data.HitPos + data.HitNormal * 4)
 			ball:SetStateEntity(NULL)
 		end

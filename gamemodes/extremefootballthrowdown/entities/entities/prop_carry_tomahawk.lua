@@ -24,10 +24,7 @@ function ENT:Initialize()
 	self.BaseClass.Initialize(self)
 
 	if CLIENT then
-		self.Emitter = ParticleEmitter(self:GetPos())
-		self.Emitter:SetNearClip(45, 55)
-
-		self.FireSound = CreateSound(self, "Missile.Ignite")
+		self.FireSound = CreateSound(self, "thrusters/rocket04.wav")
 	end
 end
 
@@ -54,7 +51,6 @@ end
 if CLIENT then
 function ENT:OnRemove()
 	self.FireSound:Stop()
-	--self.Emitter:Finish()
 end
 
 local matRope = Material("cable/rope")
@@ -79,9 +75,11 @@ function ENT:DrawTranslucent()
 
 	local r, g, b = col.r, col.g, col.b
 
-	local emitter = self.Emitter
+	local emitter = ParticleEmitter(pos1)
+	emitter:SetNearClip(45, 55)
+
 	for i=1, 2 do
-		particle = emitter:Add("sprites/light_glow02_add", pos1 + VectorRand():GetNormalized() * math.Rand(2, 6))
+		local particle = emitter:Add("sprites/light_glow02_add", pos1 + VectorRand():GetNormalized() * math.Rand(2, 6))
 		particle:SetDieTime(math.Rand(0.6, 1))
 		particle:SetStartAlpha(230)
 		particle:SetEndAlpha(50)
@@ -114,6 +112,8 @@ function ENT:DrawTranslucent()
 		particle:SetColor(45, 45, 45)
 	end
 
+	emitter:Finish()
+
 	if owner:IsValid() and owner:IsPlayer() and owner:GetState() == STATE_TOMAHAWKRIDE then
 		local rag = owner:GetRagdollEntity()
 		if rag and rag:IsValid() then
@@ -136,7 +136,6 @@ function ENT:OnThink()
 	else
 		self.FireSound:Stop()
 	end
-	self.Emitter:SetPos(self:GetPos())
 end
 
 end
@@ -163,6 +162,7 @@ function ENT:OnThrown(carrier)
 		phys:EnableGravity(false)
 		phys:EnableDrag(false)
 		phys:AddAngleVelocity(phys:GetAngleVelocity() * -1)
+		phys:SetAngleDragCoefficient(50000)
 	end
 end
 
