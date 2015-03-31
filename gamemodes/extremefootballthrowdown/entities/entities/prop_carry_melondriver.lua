@@ -18,7 +18,7 @@ ENT.ChargeTime = 2
 ENT.FireDelay = 3
 
 function ENT:KeyPress(pl, key)
-	if key == IN_ATTACK and not (pl:IsSwimming() or pl:WaterLevel() > 0) then
+	if key == IN_ATTACK then
 		if self:GetFireTime() == 0 and CurTime() >= self:GetNextFireTime() then
 			self:SetFireTime(CurTime() + self.ChargeTime)
 			self:SetNextFireTime(CurTime() + self.FireDelay)
@@ -81,12 +81,14 @@ function ENT:OnThink()
 			self:HitObject(nil, nil, self.TouchedEnemy)
 		end
 	end
+	
+	local carrier = self:GetCarrier()
+	if not carrier:IsValid() then return end
+
+	if CurTime() < self:GetFireTime() and carrier:IsSwimming() then carrier:SetLocalVelocity(Vector(0,0,0)) end
 
 	if self:GetFireTime() == 0 or CurTime() < self:GetFireTime() then return end
 	self:SetFireTime(0)
-
-	local carrier = self:GetCarrier()
-	if not carrier:IsValid() then return end
 
 	if SERVER then
 		self:EmitSound("weapons/rpg/rocketfire1.wav")
