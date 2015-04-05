@@ -16,10 +16,11 @@ TEAM_BLUE = 2
 MOVE_STOP = 0
 MOVE_OVERRIDE = 1
 
-GM.Help	= "Get the ball in to the enemy goal.\nYou speed up over time and lose speed for hitting things or changing directions quickly.\nHold right click while going fast to ram.\nPress left click for melee attack.\nPress right click with the ball to throw it.\nPress ALT to dive.\nHold R to look behind you."
+GM.Help	= "Get the ball in to the enemy goal.\n\nYou speed up over time and lose speed for hitting things or changing directions quickly.\n\nHold right click while going fast to ram.\nPress left click for melee attack/diving tackle.\nPress right click with the ball to throw it.\nPress ALT to dive.\nHold R to look behind you.\nHold CTRL + stay still to prepare a high jump."
 
 GM.TeamBased = true
 GM.AllowAutoTeam = true
+GM.UseAutoJoin = true
 
 GM.AllowSpectating = true
 GM.ValidSpectatorModes = {OBS_MODE_CHASE, OBS_MODE_IN_EYE, OBS_MODE_ROAMING}
