@@ -18,7 +18,7 @@ ENT.ChargeTime = 2
 ENT.FireDelay = 3
 
 function ENT:KeyPress(pl, key)
-	if key == IN_ATTACK then
+	if key == IN_ATTACK and not pl:IsSwimming() then
 		if self:GetFireTime() == 0 and CurTime() >= self:GetNextFireTime() then
 			self:SetFireTime(CurTime() + self.ChargeTime)
 			self:SetNextFireTime(CurTime() + self.FireDelay)
