@@ -379,6 +379,7 @@ function GM:Initialize()
 	resource.AddFile("materials/noxctf/sprite_bloodspray8.vmt")
 	resource.AddFile("sound/eft/ballreset.ogg")
 	resource.AddFile("sound/eft/bigpole_swing.ogg")
+	resource.AddFile("materials/overlays/statuscold.vmt")
 
 	if self.ForceMappackDownload then
 		resource.AddWorkshop("244859331")

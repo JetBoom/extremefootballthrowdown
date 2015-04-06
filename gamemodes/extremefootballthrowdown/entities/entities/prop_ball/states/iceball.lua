@@ -10,12 +10,25 @@ if SERVER then
 	end
 
 	function STATE:PhysicsCollide(ball, hitdata, phys)
-		if hitdata.HitNormal.z >= 0.5 then
-			phys:SetVelocityInstantaneous(hitdata.OurOldVelocity * (1 - hitdata.DeltaTime * 0.05))
+		if hitdata.Speed > 250 then
+			local ent = ents.Create("effect_iceballimpact")
+			
+			ang = hitdata.HitNormal:Angle()
 
-			return true
+			if ent:IsValid() then
+				ent:SetPos(ball:GetPos())
+				ent:SetAngles(Angle(ang.p-90,ang.y,ang.r))
+				ent:SetModelScale(hitdata.Speed / 500)
+				ent:Spawn()
+			end
 		end
+		phys:SetVelocityInstantaneous(Vector(hitdata.OurOldVelocity.x*0.97,hitdata.OurOldVelocity.y*0.97,hitdata.OurOldVelocity.z*-0.3))	
+		return true
 	end
+end
+
+function STATE:PreMove(ball, pl, move)
+	move:SetMaxSpeed(move:GetMaxSpeed() * 0.75)
 end
 
 local colBall = Color(0, 255, 255)
