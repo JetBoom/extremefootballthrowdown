@@ -1,6 +1,6 @@
 "UnlitGeneric"
 {
-	"$basetexture" "Effects/statuscold"
+	"$basetexture" "overlays/statuscold"
 	"$surfaceprop" "glass"
 	"$translucent" 1
 	"$basetexturetransform" "scale .7 .7"

@@ -59,7 +59,7 @@ if not CLIENT then return end
 
 ENT.RenderGroup = RENDERGROUP_TRANSLUCENT
 
-local mat = Material("Effects/statuscold")
+local mat = Material("overlays/statuscold")
 function ENT:RenderScreenspaceEffects()
 	if LocalPlayer() ~= self:GetOwner() then return end
 	
