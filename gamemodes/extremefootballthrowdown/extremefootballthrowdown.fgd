@@ -51,6 +51,14 @@
 [
 ]
 
+@PointClass base(Targetname) studio("models/props_docks/dock01_pole01a_128.mdl") color( 255 255 255 )   = prop_carry_bigpole : "EFT: Spawns a Big Pole."
+[
+]
+
+@PointClass base(Targetname) studio("models/props_junk/garbage_glassbottle001a.mdl") color( 255 255 255 )   = prop_carry_boozebottle : "EFT: Spawns a Booze Bottle."
+[
+]
+
 @PointClass base(Targetname) studio("models/props_vehicles/car002a.mdl") color( 255 255 255 )   = prop_carry_car : "EFT: Spawns a Clown Car."
 [
 ]
@@ -60,6 +68,14 @@
 ]
 
 @PointClass base(Targetname) studio("models/weapons/w_rocket_launcher.mdl") color( 255 255 255 )   = prop_carry_melondriver : "EFT: Spawns a Melon Driver."
+[
+]
+
+@PointClass base(Targetname) studio("models/props_c17/trappropeller_engine.mdl") color( 255 255 255 )   = prop_carry_mowertrap : "EFT: Spawns a Mower Trap."
+[
+]
+
+@PointClass base(Targetname) studio("models/props_phx/amraam.mdl") color( 255 255 255 )   = prop_carry_tomahawk : "EFT: Spawns a Tomahawk Missle."
 [
 ]
 
