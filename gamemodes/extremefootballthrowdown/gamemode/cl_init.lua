@@ -501,6 +501,7 @@ function GM:Initialize()
 	surface.CreateFont("eft_3dballtext",  {font = "coolvetica", size = 32, weight = 0, antialias = false, shadow = false, outline = true})
 	surface.CreateFont("eft_3dballtextsmall",  {font = "coolvetica", size = 24, weight = 0, antialias = false, shadow = false, outline = true})
 	surface.CreateFont("eft_3dwinnertext",  {font = "coolvetica", size = 128, weight = 500, antialias = false, shadow = false, outline = true})
+	surface.CreateFont("eft_3djerseytext",  {font = "coolvetica", size = 64, weight = 500, antialias = false, shadow = false, outline = true})
 
 	self:RegisterWeapons()
 
