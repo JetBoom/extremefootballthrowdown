@@ -278,22 +278,24 @@ function GM:KeyPress(pl, key)
 
 	if key == IN_ATTACK then
 		if pl:CanMelee() then
+			local state = STATE_PUNCH1
+			--[[for _, tr in pairs(pl:GetTargets()) do
+				local hitent = tr.Entity
+				if hitent:IsPlayer() and hitent:GetState() == STATE_KNOCKEDDOWN then
+					state = STATE_KICK1
+					break
+				end
+			end]]
+
+			pl:SetState(state, STATES[state].Time)
+		end
+	elseif key == IN_ATTACK2 then
+		if pl:CanMelee() then
 			local vel = pl:GetVelocity()
 			local dir = vel:GetNormalized()
 			local speed = vel:Length() * dir:Dot(pl:GetForward())
 			if speed >= 290 and CurTime() >= pl:GetLastChargeHit() + 0.4 and pl:GetCarry() ~= self:GetBall() then
 				pl:SetState(STATE_DIVETACKLE)
-			else
-				local state = STATE_PUNCH1
-				--[[for _, tr in pairs(pl:GetTargets()) do
-					local hitent = tr.Entity
-					if hitent:IsPlayer() and hitent:GetState() == STATE_KNOCKEDDOWN then
-						state = STATE_KICK1
-						break
-					end
-				end]]
-
-				pl:SetState(state, STATES[state].Time)
 			end
 		end
 	elseif key == IN_WALK then

@@ -19,7 +19,7 @@ function STATE:Ended(pl, newstate)
 	if newstate == STATE_NONE then
 		for _, tr in ipairs(pl:GetTargets()) do
 			local hitent = tr.Entity
-			if hitent:IsPlayer() then
+			if hitent:IsPlayer() and (hitent.CrossCounteredBy ~= pl or CurTime() >= (hitent.CrossCounteredTime or -math.huge) + 1) then
 				pl:PunchHit(hitent, tr)
 			end
 		end
@@ -32,6 +32,9 @@ function STATE:OnChargedInto(pl, otherpl)
 		vel.x = 0
 		vel.y = 0
 		otherpl:SetLocalVelocity(vel)
+
+		otherpl.CrossCounteredBy = pl
+		otherpl.CrossCounteredTime = CurTime()
 
 		pl:PunchHit(otherpl)
 		otherpl:SetState(STATE_SPINNYKNOCKDOWN, STATES[STATE_SPINNYKNOCKDOWN].Time)

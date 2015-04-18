@@ -146,6 +146,7 @@ function GM:PlayerSpawn(pl)
 	pl.m_ChargeImmunity = {}
 	pl.PointsCarry = 0
 	pl.NextPainSound = 0
+	pl:SetLastAttacker(nil)
 
 	if pl:Team() == TEAM_RED then
 		pl:SetModel("models/player/barney.mdl")
@@ -287,8 +288,6 @@ function GM:DoPlayerDeath(pl, attacker, dmginfo)
 	end
 
 	pl:AddDeaths(1)
-
-	pl:SetLastAttacker(nil)
 
 	gamemode.Call("OnDoPlayerDeath", pl, attacker, dmginfo)
 end
