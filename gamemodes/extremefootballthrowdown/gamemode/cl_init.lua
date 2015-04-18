@@ -1002,6 +1002,11 @@ function GM:DrawCrosshair()
 	surface.DrawRect(x - 8, y + pitchy * h - 4, 8, 4)
 end
 
+function GM:AddScoreboardKills(ScoreBoard)
+	local f = function( ply ) return ply:Frags() end
+	ScoreBoard:AddColumn("Score", 80, f, 0.5, nil, 6, 6)
+end
+
 local matScreenCrack = CreateMaterial("eft_screencrack", "UnlitGeneric", {
 	["$basetexture"] = "Decals/rollermine_crater",
 	["$nodecal"] = 1,
