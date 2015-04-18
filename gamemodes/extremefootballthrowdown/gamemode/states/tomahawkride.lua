@@ -1,5 +1,7 @@
+STATE.MaxTurningAngle = 34
+
 function STATE:Started(pl, oldstate)
-	pl:SetStateAngles(Angle(0, 0, 0))
+	--pl:SetStateAngles(Angle(0, 0, 0))
 
 	if SERVER then
 		pl:CreateRagdoll()
@@ -75,27 +77,24 @@ end
 
 function STATE:CreateMove(pl, cmd)
 	local ent = pl:GetStateEntity()
-	if pl:GetStateAngles() ~= angle_zero then
+	if not ent:IsValid() then return end
+
+	--[[if pl:GetStateAngles() ~= angle_zero then
 		ent.m_GuideEyeAngles = pl:GetStateAngles()
+	end]]
+
+	local viewangle = cmd:GetViewAngles()
+
+	if not ent.m_GuideAngles then
+		ent.m_GuideAngles = viewangle
 	end
 
-	local maxdiff = FrameTime() * 34
-	local mindiff = -maxdiff
-	local originalangles = ent.m_GuideEyeAngles or pl:EyeAngles()
-	local viewangles = cmd:GetViewAngles()
+	local newangles = util.LimitTurning(ent.m_GuideAngles, viewangle, ent.MaxTurningAngle, CurTime() - ent.LastThink)
 
-	local diff = math.AngleDifference(viewangles.yaw, originalangles.yaw)
-	if diff > maxdiff or diff < mindiff then
-		viewangles.yaw = math.NormalizeAngle(originalangles.yaw + math.Clamp(diff, mindiff, maxdiff))
-	end
-	diff = math.AngleDifference(viewangles.pitch, originalangles.pitch)
-	if diff > maxdiff or diff < mindiff then
-		viewangles.pitch = math.NormalizeAngle(originalangles.pitch + math.Clamp(diff, mindiff, maxdiff))
-	end
+	ent.m_GuideAngles = newangles
+	ent.LastThink = CurTime()
 
-	ent.m_GuideEyeAngles = viewangles
-
-	cmd:SetViewAngles(viewangles)
+	cmd:SetViewAngles(newangles)
 end
 
 function STATE:PrePlayerDraw(pl)

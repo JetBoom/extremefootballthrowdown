@@ -97,8 +97,10 @@ function STATE:KeyPress(pl, key)
 end
 
 function STATE:AddPower(pl, opp)
-	pl:SetStateNumber(pl:GetStateNumber() + self.PowerPerKey)
-	opp:SetStateNumber(opp:GetStateNumber() - self.PowerPerKey)
+	if SERVER then
+		pl:SetStateNumber(pl:GetStateNumber() + self.PowerPerKey)
+		opp:SetStateNumber(opp:GetStateNumber() - self.PowerPerKey)
+	end
 
 	if opp:GetStateNumber() <= 0 or pl:GetStateNumber() >= 1 then
 		self:WinPowerStruggle(pl, opp)

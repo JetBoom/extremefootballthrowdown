@@ -16,10 +16,17 @@ ENT.BoneName = "ValveBiped.Bip01_R_Hand"
 ENT.AttachmentOffset = Vector(10, 0, -10)
 ENT.AttachmentAngles = Angle(90, 0, 0)
 
+ENT.MaxTurningAngle = 60
+
 AccessorFuncDT(ENT, "Thrown", "Bool", 0)
+
+
+ENT.LastThink = 0
 
 function ENT:Initialize()
 	self:SetModelScale(0.8, 0)
+
+	self.LastThink = CurTime()
 
 	self.BaseClass.Initialize(self)
 
@@ -178,19 +185,29 @@ function ENT:OnThink()
 	elseif self:GetThrown() then
 		local owner = self:GetOwner()
 		if owner:IsValid() and owner:IsPlayer() and owner:GetState() == STATE_TOMAHAWKRIDE then
-			local dir = owner:GetAimVector()
-			local ang = dir:Angle()
+			local curtime = CurTime()
+			local ang = owner:EyeAngles()
+
+			if not self.m_GuideAngles then
+				self.m_GuideAngles = ang
+			end
+
+			ang = util.LimitTurning(self.m_GuideAngles, ang, self.MaxTurningAngle, curtime - self.LastThink)
+
 			--ang.roll = (CurTime() * 360) % 360
+
+			self.m_GuideAngles = ang
 
 			self:SetAngles(ang)
 			local phys = self:GetPhysicsObject()
 			if phys:IsValid() then
-				phys:SetVelocityInstantaneous(dir * self.ThrowForce)
+				phys:SetVelocityInstantaneous(ang:Forward() * self.ThrowForce)
 			end
 
-			self.DieTime = CurTime() + 30
+			self.LastThink = curtime
+			self.DieTime = curtime + 30
 
-			self:NextThink(CurTime())
+			self:NextThink(curtime)
 			return true
 		end
 	end

@@ -77,7 +77,7 @@ function GM:_CreateMove(cmd)
 	self.CameraYawLerp = math.Approach(self.CameraYawLerp, 0, FrameTime() * math.max(15, math.abs(self.CameraYawLerp) ^ 1.15))
 	self.PrevCameraYaw = ang.yaw
 
-	--return MySelf:CallStateFunction("CreateMove", cmd) or self.BaseClass.CreateMove(self, cmd)
+	return MySelf:CallStateFunction("CreateMove", cmd) or self.BaseClass.CreateMove(self, cmd)
 end
 
 function GM:CreateMoveTaunt(cmd)
@@ -359,7 +359,7 @@ function GM:Draw3DHUD()
 
 		MySelf:CallStateFunction("Draw3DHUD")
 	else
-		if team.Joinable(MySelf:Team()) and MySelf:Team() ~= TEAM_SPECTATE then
+		if team.Joinable(MySelf:Team()) and MySelf:Team() ~= TEAM_SPECTATOR then
 			self:Draw3DHealthBar()
 			self:Draw3DWeapon()
 			self:Draw3DPotentialWeapon()

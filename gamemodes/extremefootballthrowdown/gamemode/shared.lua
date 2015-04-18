@@ -12,6 +12,7 @@ include("nixthelag.lua")
 
 TEAM_RED = 1
 TEAM_BLUE = 2
+TEAM_SPECTATE = TEAM_SPECTATOR
 
 MOVE_STOP = 0
 MOVE_OVERRIDE = 1
@@ -486,6 +487,25 @@ function timer.CreateEx(timername, delay, repeats, action, ...)
 		local a, b, c, d, e, f, g, h, i, j, k = ...
 		timer.Create(timername, delay, repeats, function() action(a, b, c, d, e, f, g, h, i, j, k) end)
 	end
+end
+
+function util.LimitTurning(oldangles, newangles, angle_per_dt, dt)
+	dt = dt or FrameTime()
+
+	local maxdiff = dt * angle_per_dt
+	local mindiff = -maxdiff
+
+	local diff = math.AngleDifference(newangles.yaw, oldangles.yaw)
+	if diff > maxdiff or diff < mindiff then
+		newangles.yaw = math.NormalizeAngle(oldangles.yaw + math.Clamp(diff, mindiff, maxdiff))
+	end
+
+	diff = math.AngleDifference(newangles.pitch, oldangles.pitch)
+	if diff > maxdiff or diff < mindiff then
+		newangles.pitch = math.NormalizeAngle(oldangles.pitch + math.Clamp(diff, mindiff, maxdiff))
+	end
+
+	return newangles
 end
 
 function AccessorFuncDT(tab, membername, type, id)
