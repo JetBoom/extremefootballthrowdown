@@ -285,6 +285,8 @@ function GM:DoPlayerDeath(pl, attacker, dmginfo)
 
 	pl:AddDeaths(1)
 
+	pl:SetLastAttacker(nil)
+
 	gamemode.Call("OnDoPlayerDeath", pl, attacker, dmginfo)
 end
 
