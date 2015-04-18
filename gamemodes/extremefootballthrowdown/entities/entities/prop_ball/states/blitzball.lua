@@ -69,7 +69,7 @@ function STATE:StartTouch(ball, ent)
 end
 
 function STATE:ShouldHit(ball, ent)
-	return ent:IsPlayer() and not ball:GetCarrier():IsValid() and ent:Alive() and ent:Team() ~= ball:GetLastCarrierTeam() and ball:GetVelocity():Length() >= 200
+	return ent:IsPlayer() and not ball:GetCarrier():IsValid() and ent:Alive() and ent:Team() ~= ball:GetLastCarrierTeam() and ball:GetVelocity():Length() >= 250
 end
 
 local colBall = Color(255, 120, 10)

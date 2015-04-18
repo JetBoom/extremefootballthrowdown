@@ -135,7 +135,7 @@ function meta:ChargeHit(hitent, tr)
 	end
 	hitent:TakeDamage(5, self)
 
-	self:SetVelocity(self:GetVelocity() * -0.1)
+	self:SetVelocity(self:GetVelocity() * -0.03)
 	self:ViewPunch(VectorRand():Angle() * (math.random(0, 1) == 0 and -1 or 1) * 0.15)
 
 	local effectdata = EffectData()

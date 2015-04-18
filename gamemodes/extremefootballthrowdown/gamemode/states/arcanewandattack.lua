@@ -10,7 +10,7 @@ end
 
 if SERVER then
 function STATE:Ended(pl, newstate)
-	if newstate ~= STATE_NONE then return end
+	if newstate ~= STATE_NONE or not pl:GetCarry():IsValid() or pl:GetCarry():GetClass() ~= "prop_carry_arcanewand" then return end
 
 	pl:EmitSound("weapons/physcannon/energy_sing_flyby"..math.random(2)..".wav")
 

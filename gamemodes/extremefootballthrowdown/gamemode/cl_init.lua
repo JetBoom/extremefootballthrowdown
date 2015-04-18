@@ -225,7 +225,7 @@ function GM:PostProcessPermitted()
 end
 
 function GM:PositionScoreboard(ScoreBoard)
-	ScoreBoard:SetSize(math.min(600, ScrW() - 32), math.min(800, ScrH() - 32))
+	ScoreBoard:SetSize(math.min(800, ScrW() - 32), math.min(800, ScrH() - 32))
 	ScoreBoard:Center()
 end
 

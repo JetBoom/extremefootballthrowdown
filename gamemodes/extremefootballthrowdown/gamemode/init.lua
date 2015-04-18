@@ -51,7 +51,9 @@ end
 
 function GM:OnEndOfGame(bGamemodeVote)
 	for k,v in pairs(player.GetAll()) do
-		v:Freeze(true)
+		if v:ShouldBeFrozen() then
+			v:Freeze(true)
+		end
 	end
 
 	net.Start("eft_endofgame")
@@ -156,7 +158,12 @@ function GM:PlayerSpawn(pl)
 	if not team.Joinable(pl:Team()) then return end
 
 	if CurTime() < GetGlobalFloat("RoundStartTime") and pl:Team() ~= TEAM_SPECTATOR and pl:Team() ~= TEAM_CONNECTING then
-		pl:Freeze(true)
+		pl:SetState(STATE_PREROUND)
+	else
+		pl:EndState()
+		if pl:ShouldBeFrozen() then
+			pl:Freeze(true)
+		end
 	end
 
 	for bonename, scale in pairs(self.BoneScales) do
@@ -172,8 +179,6 @@ function GM:PlayerSpawn(pl)
 			pl:SetFlexWeight(i, math.Rand(0, 2))
 		end
 	end
-
-	pl:EndState()
 end
 
 function GM:SetupTieBreaker()
@@ -208,15 +213,13 @@ function GM:EndTieBreaker(winnerteamid)
 end
 
 function GM:OnRoundStart(num)
-	self.BaseClass.OnRoundStart(self, num)
+	for _, pl in pairs(player.GetAll()) do
+		if pl:GetState() == STATE_PREROUND then
+			pl:EndState()
+		end
+	end
 
 	self.NoFlex = false
-end
-
-function GM:OnPreRoundStart(num)
-	self.BaseClass.OnPreRoundStart(self, num)
-
-	self.NoFlex = true
 end
 
 function GM:PlayerSetModel(pl)
@@ -489,10 +492,15 @@ function GM:OnPlayerChangedTeam(pl, oldteam, newteam)
 end
 
 function GM:OnPreRoundStart(num)
-	self.BaseClass.OnPreRoundStart(self, num)
+	game.CleanUpMap()
 
 	self:RecalculateGoalCenters(TEAM_RED)
 	self:RecalculateGoalCenters(TEAM_BLUE)
+	
+	UTIL_StripAllPlayers()
+	UTIL_SpawnAllPlayers()
+
+	self.NoFlex = true
 
 	game.SetTimeScale(1)
 

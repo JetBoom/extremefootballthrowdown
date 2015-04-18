@@ -9,7 +9,8 @@ end
 function STATE:Started(pl, oldstate)
 	pl:ResetJumpPower()
 
-	pl:SetStateInteger(pl:KeyDown(IN_ATTACK2) and 1 or pl:KeyDown(IN_RELOAD) and -1 or 0)
+	--pl:SetStateInteger(pl:KeyDown(IN_ATTACK2) and 1 or pl:KeyDown(IN_RELOAD) and -1 or 0)
+	pl:SetStateInteger(pl:KeyDown(IN_RELOAD) and -1 or 0)
 	pl:SetStateNumber(0)
 end
 
@@ -71,9 +72,9 @@ function STATE:CalcMainActivity(pl, velocity)
 end
 
 function STATE:KeyPress(pl, key)
-	if key == IN_ATTACK2 then
+	--[[if key == IN_ATTACK2 then
 		pl:SetStateInteger(1)
-	elseif key == IN_RELOAD then
+	else]] if key == IN_RELOAD then
 		pl:SetStateInteger(-1)
 	elseif key == IN_JUMP and self:CanHighJump(pl) then
 		pl:SetState(STATE_HIGHJUMP, 5)
@@ -85,7 +86,8 @@ function STATE:CanHighJump(pl)
 end
 
 function STATE:KeyRelease(pl, key)
-	if key == IN_ATTACK2 and pl:GetStateInteger() == 1 or key == IN_RELOAD and pl:GetStateInteger() == -1 then
+	--if key == IN_ATTACK2 and pl:GetStateInteger() == 1 or key == IN_RELOAD and pl:GetStateInteger() == -1 then
+	if key == IN_RELOAD and pl:GetStateInteger() == -1 then
 		pl:SetStateInteger(0)
 	end
 end
