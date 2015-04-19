@@ -166,11 +166,36 @@ function GM:GetOppositeTeam(teamid)
 end
 
 function GM:SetBallHome(vec)
-	self.BallHome = vec
+	--self.BallHome = vec
+	local ball = self:GetBall()
+	if ball:IsValid() then
+		ball:SetHome(vec)
+	end
 end
 
 function GM:GetBallHome()
-	return self.BallHome or Vector(0, 0, 0)
+	--return self.BallHome or vector_origin
+	local ball = self:GetBall()
+	if ball:IsValid() then
+		return ball:GetHome()
+	end
+	
+	return vector_origin
+end
+
+function GM:GetGoalCenter(teamid)
+	local ball = self:GetBall()
+	if ball:IsValid() then
+		if teamid == TEAM_RED then
+			return ball:GetRedGoalCenter()
+		end
+
+		if teamid == TEAM_BLUE then
+			return ball:GetBlueGoalCenter()
+		end
+	end
+
+	return vector_origin
 end
 
 function GM:SetBall(ent)

@@ -931,34 +931,134 @@ function GM:RenderScreenspaceEffects()
 	end]]
 end
 
-local color_black_alpha60 = Color(10, 10, 10, 60)
-function GM:DrawBallLineHUD()
-	local ball = self:GetBall()
-	if ball:IsValid() then
-		local redcenter = ball:GetRedGoalCenter()
-		local bluecenter = ball:GetBlueGoalCenter()
-		local ballpos = ball:GetPos()
-		local wid, hei = 200, 32
-		draw.RoundedBox(4, 0, 0, wid, hei, color_black_alpha60)
-		surface.SetDrawColor(255, 255, 255, 255)
-		surface.DrawLine(16, hei * 0.5, wid - 16, hei * 0.5)
-		surface.SetDrawColor(255, 10, 10, 255)
-		surface.DrawRect(8, hei * 0.5 - 4, 8, 8)
-		surface.SetDrawColor(20, 20, 255, 255)
-		surface.DrawRect(wid - 16, hei * 0.5 - 4, 8, 8)
-		local totaldist = redcenter:Distance(bluecenter)
-		if totaldist > 0 then
-			local balldistfromred = math.min(ballpos:Distance(redcenter), totaldist)
-			local balldistfromblue = math.min(ballpos:Distance(bluecenter), totaldist)
-			local halfline = wid - 32
-			local carrier = ball:GetCarrier()
-			local col = carrier:IsValid() and carrier:IsPlayer() and team.GetColor(carrier:Team()) or color_white
-			if balldistfromred < balldistfromblue then
-				surface.DrawCircle(16 + (balldistfromred / totaldist) * halfline, hei * 0.5, 4, col)
+local MinimapCamera = {
+	drawhud = false,
+	drawviewmodel = false,
+	fov = 0,
+	ortho = true,
+	znear = 32,
+	zfar = 32000
+}
+
+local MinimapRT
+local MinimapMaterial
+
+local MinimapCameraUp = Vector(1, 0)
+local MinimapCameraRight = Vector(0, 1)
+local MinimapCameraScale = 1
+local MinimapCameraOffset = vector_origin
+local function MinimapWorldToScreen(pos)
+	pos = MinimapCamera.origin - pos
+
+	local scrpos = pos.y * MinimapCameraUp - pos.x * MinimapCameraRight
+	scrpos = scrpos * MinimapCameraScale
+	scrpos = scrpos + MinimapCameraOffset
+
+	scrpos.x = math.Clamp(scrpos.x, MinimapCamera.x, MinimapCamera.x + MinimapCamera.w)
+	scrpos.y = math.Clamp(scrpos.y, MinimapCamera.y, MinimapCamera.y + MinimapCamera.h)
+
+	return scrpos
+end
+
+function GM:GenerateMinimapMaterial(redgoal, bluegoal)
+	MinimapRT = GetRenderTarget("EFTMinimap", 1024, 512, true)
+	MinimapMaterial = CreateMaterial("EFTMinimap", "UnlitGeneric", {["$basetexture"] = "EFTMinimap"})
+
+	local screenscale = BetterScreenScale()
+	local center = self:GetBallHome()
+	local extents = (bluegoal:Distance(redgoal) + 600) / 2
+
+	local ang = bluegoal - redgoal
+	ang:Normalize()
+	ang = ang:Angle()
+	ang:RotateAroundAxis(ang:Right(), -90)
+	ang:RotateAroundAxis(ang:Forward(), -90)
+
+	MinimapCamera.angles = ang
+	MinimapCamera.origin = center + Vector(0, 0, 16000)
+	MinimapCamera.x = 0
+	MinimapCamera.y = 0
+	MinimapCamera.w = 1024
+	MinimapCamera.h = 512
+
+	MinimapCamera.ortholeft = -extents * screenscale
+	MinimapCamera.orthoright = extents * screenscale
+	MinimapCamera.orthotop = MinimapCamera.ortholeft / 2
+	MinimapCamera.orthobottom = MinimapCamera.orthoright / 2
+
+	MinimapCameraUp = MinimapCamera.angles:Up()
+	MinimapCameraRight = MinimapCamera.angles:Right()
+
+	local old_rt = render.GetRenderTarget()
+	local old_w, old_h = ScrW(), ScrH()
+
+	render.SetRenderTarget(MinimapRT)
+	render.SetViewPort(0, 0, 1024, 512)
+	render.Clear(0, 0, 0, 0)
+	cam.Start2D()
+
+	hook.Add("PreDrawSkyBox", "MinimapCamera", function() return true end)
+
+	render.RenderView(MinimapCamera)
+
+	hook.Remove("PreDrawSkyBox", "MinimapCamera")
+
+	cam.End2D()
+	render.SetViewPort(0, 0, old_w, old_h)
+	render.SetRenderTarget(old_rt)
+end
+
+function GM:DrawMinimap()
+	local redgoal = self:GetGoalCenter(TEAM_RED)
+	local bluegoal = self:GetGoalCenter(TEAM_BLUE)
+
+	if redgoal == vector_origin or bluegoal == vector_origin then return end
+
+	if not MinimapRT then
+		self:GenerateMinimapMaterial(redgoal, bluegoal)
+	end
+
+	local screenscale = BetterScreenScale()
+
+	MinimapCamera.x = 0
+	MinimapCamera.y = 0
+	MinimapCamera.w = screenscale * 300
+	MinimapCamera.h = screenscale * 150
+	MinimapCameraScale = MinimapCamera.w / MinimapCamera.orthoright / 2
+	MinimapCameraOffset = Vector(MinimapCamera.x + MinimapCamera.w / 2, MinimapCamera.y + MinimapCamera.h / 2)
+
+	surface.SetDrawColor(255, 255, 255, 255)
+	surface.SetMaterial(MinimapMaterial)
+	surface.DrawTexturedRect(MinimapCamera.x, MinimapCamera.y, MinimapCamera.w, MinimapCamera.h)
+
+	local pos
+	local lp = LocalPlayer()
+	for _, pl in pairs(player.GetAll()) do
+		if pl:Alive() and pl:GetObserverMode() == OBS_MODE_NONE then
+			pos = MinimapWorldToScreen(pl:GetPos())
+			if pl == lp then
+				local c = 200 + math.abs(math.sin(CurTime() * 5)) * 55
+				surface.SetDrawColor(c, c, c, 255)
 			else
-				surface.DrawCircle((wid - 16) - (balldistfromblue / totaldist) * halfline, hei * 0.5, 4, col)
+				surface.SetDrawColor(team.GetColor(pl:Team()))
 			end
+			surface.DrawRect(pos.x - 2, pos.y - 2, 4, 4)
 		end
+	end
+
+	pos = MinimapWorldToScreen(self:GetGoalCenter(TEAM_RED))
+	surface.DrawCircle(pos.x, pos.y, 8, team.GetColor(TEAM_RED))
+
+	pos = MinimapWorldToScreen(self:GetGoalCenter(TEAM_BLUE))
+	surface.DrawCircle(pos.x, pos.y, 8, team.GetColor(TEAM_BLUE))
+
+	local ball = self:GetBall()
+	local carrier = ball:GetCarrier()
+	pos = MinimapWorldToScreen(ball:GetPos())
+	if carrier:IsValid() then
+		surface.DrawCircle(pos.x, pos.y, 6 + math.sin(CurTime() * 5) * 4, team.GetColor(carrier:Team()))
+	else
+		surface.DrawCircle(pos.x, pos.y, 6, color_white)
 	end
 end
 
@@ -1023,7 +1123,7 @@ function GM:AddScreenCrack()
 end
 
 function GM:OnHUDPaint()
-	self:DrawBallLineHUD()
+	self:DrawMinimap()
 	self:DrawCrosshair()
 
 	if #ScreenCracks == 0 then return end

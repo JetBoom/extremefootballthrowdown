@@ -72,6 +72,14 @@ function ENT:GetBlueGoalCenter()
 	return self:GetDTVector(1)
 end
 
+function ENT:SetHome(vec)
+	self:SetDTVector(3, vec)
+end
+
+function ENT:GetHome()
+	return self:GetDTVector(3)
+end
+
 function ENT:SetStateEnd(time)
 	self:SetDTFloat(0, time)
 end

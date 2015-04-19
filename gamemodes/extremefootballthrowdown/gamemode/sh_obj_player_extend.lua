@@ -147,7 +147,7 @@ function meta:CanMelee()
 end
 
 function meta:CanCharge()
-	return self:GetState() == STATE_NONE --[[and self:GetStateInteger() == 1]] and self:OnGround() and not self:Crouching() and self:GetVelocity():Length() > 290 and self:WaterLevel() <= 1
+	return self:GetState() == STATE_NONE and self:GetStateInteger() == 0 and self:OnGround() and not self:Crouching() and self:GetVelocity():Length() > 290 and self:WaterLevel() <= 1
 end
 
 function meta:CanDodge()
