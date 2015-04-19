@@ -169,12 +169,6 @@ function meta:GetLastChargeHit()
 	return self:GetDTFloat(3)
 end
 
-local OBS_MODE_NONE = OBS_MODE_NONE
-local OldAlive = meta.Alive
-function meta:Alive()
-	return OldAlive(self) and self:GetObserverMode() == OBS_MODE_NONE
-end
-
 function meta:GetTraceFilter(excludeball)
 	local filter = team.GetPlayers(self:Team())
 	if not excludeball then

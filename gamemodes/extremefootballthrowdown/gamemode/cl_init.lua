@@ -32,6 +32,10 @@ end)
 
 language.Add("prop_ball", "Ball")
 
+function BetterScreenScale()
+	return math.max(0.6, math.min(1, ScrH() / 1080))
+end
+
 function GM:HookGetLocal()
 	self.CreateMove = self._CreateMove
 	self.PostDrawTranslucentRenderables = self._PostDrawTranslucentRenderables
@@ -173,7 +177,7 @@ function GM:Think()
 			end
 		end
 
-		if pl:Alive() then
+		if pl:Alive() and pl:GetObserverMode() == OBS_MODE_NONE then
 			if pl == lp then
 				pl:ThinkSelf()
 			else

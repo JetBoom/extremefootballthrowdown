@@ -34,7 +34,7 @@ function GM:Think()
 	self.BaseClass.Think(self)
 
 	for _, pl in pairs(player.GetAll()) do
-		if pl:Alive() then
+		if pl:Alive() and pl:GetObserverMode() == OBS_MODE_NONE then
 			if CurTime() >= pl.NextHealthRegen and CurTime() >= pl.LastDamaged + 5 and pl:Health() < pl:GetMaxHealth() then
 				pl.NextHealthRegen = CurTime() + 0.5
 				pl:SetHealth(pl:Health() + 1)
