@@ -969,7 +969,7 @@ function GM:GenerateMinimapMaterial(redgoal, bluegoal)
 	MinimapMaterial = CreateMaterial("EFTMinimap", "UnlitGeneric", {["$basetexture"] = "EFTMinimap"})
 
 	local screenscale = BetterScreenScale()
-	local center = (redgoal + bluegoal) * 0.5 --self:GetBallHome()
+	local center = (redgoal + bluegoal) * 0.5
 	local extents = (bluegoal:Distance(redgoal) + 600) / 2
 
 	local ang = bluegoal - redgoal
@@ -1002,9 +1002,11 @@ function GM:GenerateMinimapMaterial(redgoal, bluegoal)
 	cam.Start2D()
 
 	hook.Add("PreDrawSkyBox", "MinimapCamera", function() return true end)
+	hook.Add("PostDrawTranslucentRenderables", "MinimapCamera", function() return true end)
 
 	render.RenderView(MinimapCamera)
 
+	hook.Remove("PostDrawTranslucentRenderables", "MinimapCamera")
 	hook.Remove("PreDrawSkyBox", "MinimapCamera")
 
 	cam.End2D()
