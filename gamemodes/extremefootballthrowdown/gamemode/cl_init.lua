@@ -969,7 +969,7 @@ function GM:GenerateMinimapMaterial(redgoal, bluegoal)
 	MinimapMaterial = CreateMaterial("EFTMinimap", "UnlitGeneric", {["$basetexture"] = "EFTMinimap"})
 
 	local screenscale = BetterScreenScale()
-	local center = self:GetBallHome()
+	local center = (redgoal + bluegoal) * 0.5 --self:GetBallHome()
 	local extents = (bluegoal:Distance(redgoal) + 600) / 2
 
 	local ang = bluegoal - redgoal
