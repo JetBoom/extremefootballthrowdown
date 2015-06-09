@@ -16,6 +16,11 @@ local FrozenSequences = {
 	"idle_suitcase"
 }
 
+function STATE:EntityTakeDamage(dmginfo)
+	dmginfo:SetDamage(0)
+	dmginfo:ScaleDamage(0)
+end
+
 function STATE:CalcMainActivity(pl, velocity)
 	pl.CalcSeqOverride = pl:LookupSequence(FrozenSequences[(pl:EntIndex() + pl:Frags()) % #FrozenSequences + 1])
 	
