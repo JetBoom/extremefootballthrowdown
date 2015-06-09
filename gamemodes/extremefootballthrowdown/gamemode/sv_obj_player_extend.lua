@@ -71,7 +71,7 @@ function meta:GiveStatus(sType, fDie)
 end
 
 function meta:KnockDown(time, knocker)
-	if not self:Alive() or self:InVehicle() then return end
+	if not self:Alive() or self:InVehicle() or self:GetState() == STATE_PREROUND then return end
 
 	time = time or 2.75
 	self:SetState(STATE_KNOCKEDDOWN, time)
