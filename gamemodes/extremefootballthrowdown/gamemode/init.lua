@@ -351,17 +351,21 @@ function GM:SpawnRandomWeapon(silent)
 end
 
 function GM:EntityTakeDamage(ent, dmginfo)
-	if ent:IsPlayer() and dmginfo:IsExplosionDamage() then
-		local attacker = dmginfo:GetAttacker()
-		if attacker:IsValid() and attacker:IsPlayer() and attacker:Team() == ent:Team() and ent ~= attacker then
-			dmginfo:SetDamage(0)
-			dmginfo:ScaleDamage(0)
-			return
-		end
+	if ent:IsPlayer() then
+		if ent:CallStateFunction("EntityTakeDamage", dmginfo) then return end
 
-		if dmginfo:GetDamage() >= 16 then
-			ent:Ignite(dmginfo:GetDamage() / 20)
-			ent:ThrowFromPosition(dmginfo:GetDamagePosition(), dmginfo:GetDamage() * 10, true, attacker)
+		if dmginfo:IsExplosionDamage() then
+			local attacker = dmginfo:GetAttacker()
+			if attacker:IsValid() and attacker:IsPlayer() and attacker:Team() == ent:Team() and ent ~= attacker then
+				dmginfo:SetDamage(0)
+				dmginfo:ScaleDamage(0)
+				return
+			end
+
+			if dmginfo:GetDamage() >= 16 then
+				ent:Ignite(dmginfo:GetDamage() / 20)
+				ent:ThrowFromPosition(dmginfo:GetDamagePosition(), dmginfo:GetDamage() * 10, true, attacker)
+			end
 		end
 	end
 end
