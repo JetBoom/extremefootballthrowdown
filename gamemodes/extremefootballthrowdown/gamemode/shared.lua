@@ -393,6 +393,14 @@ function GM:OnPlayerHitGround(pl, inwater, hitfloater, speed)
 		end
 	end
 
+	local initvel = pl:GetVelocity()
+	local plspeed = math.sqrt(initvel.x ^ 2 + initvel.y ^ 2)
+	if (plspeed > 375) then
+		initvel.z=0
+		div = plspeed / 375
+		pl:SetVelocity( -initvel/div )
+	end
+
 	return true
 end
 
