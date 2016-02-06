@@ -194,7 +194,9 @@ function GM:PlayerSpawn(pl)
 	pl.NextPainSound = 0
 	pl:SetLastAttacker(nil)
 
-	if pl:Team() == TEAM_RED then
+	local teamid = pl:Team()
+
+	if teamid == TEAM_RED then
 		pl:SetModel("models/player/barney.mdl")
 		pl:SetPlayerColor(Vector(2, 0, 0))
 	else
@@ -202,12 +204,16 @@ function GM:PlayerSpawn(pl)
 		pl:SetPlayerColor(Vector(0, 0, 1))
 	end
 
-	if not team.Joinable(pl:Team()) then return end
+	if not team.Joinable(teamid) then return end
 
-	pl:ShouldDropWeapon(false)
-	pl:Give("weapon_eft")
+	if teamid == TEAM_RED or teamid == TEAM_BLUE then
+		pl:ShouldDropWeapon(false)
+		pl:Give("weapon_eft")
+	else
+		pl:StripWeapons()
+	end
 
-	if CurTime() < GetGlobalFloat("RoundStartTime") and pl:Team() ~= TEAM_SPECTATOR and pl:Team() ~= TEAM_CONNECTING then
+	if CurTime() < GetGlobalFloat("RoundStartTime") and teamid ~= TEAM_SPECTATOR and teamid ~= TEAM_CONNECTING then
 		pl:SetState(STATE_PREROUND)
 	else
 		pl:EndState()
