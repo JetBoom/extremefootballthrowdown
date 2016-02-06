@@ -22,20 +22,20 @@ function ENT:Initialize()
 	self.NextTouch = {}
 end
 
-function ENT:KeyPress(pl, key)
-	if key == IN_ATTACK then
-		if pl:CanMelee() then
-			pl:SetState(STATE_MOWERTRAPPLACE, STATES[STATE_MOWERTRAPPLACE].Time)
-		end
-
-		return true
-	elseif key == IN_ATTACK2 then
-		if pl:CanThrow() then
-			pl:SetState(STATE_THROW)
-		end
-
-		return true
+function ENT:PrimaryAttack(pl)
+	if pl:CanMelee() then
+		pl:SetState(STATE_MOWERTRAPPLACE, STATES[STATE_MOWERTRAPPLACE].Time)
 	end
+
+	return true
+end
+
+function ENT:SecondaryAttack(pl)
+	if pl:CanThrow() then
+		pl:SetState(STATE_THROW)
+	end
+
+	return true
 end
 
 function ENT:Move(pl, move)

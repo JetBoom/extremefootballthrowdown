@@ -17,23 +17,23 @@ ENT.AttachmentAngles = Angle(180, 0, 0)
 ENT.ChargeTime = 2
 ENT.FireDelay = 3
 
-function ENT:KeyPress(pl, key)
-	if key == IN_ATTACK and not pl:IsSwimming() then
-		if self:GetFireTime() == 0 and CurTime() >= self:GetNextFireTime() then
-			self:SetFireTime(CurTime() + self.ChargeTime)
-			self:SetNextFireTime(CurTime() + self.FireDelay)
+function ENT:PrimaryAttack(pl)
+	if not pl:IsSwimming() and self:GetFireTime() == 0 and CurTime() >= self:GetNextFireTime() then
+		self:SetFireTime(CurTime() + self.ChargeTime)
+		self:SetNextFireTime(CurTime() + self.FireDelay)
 
-			if SERVER then self:EmitSound("npc/strider/charging.wav", 78, 77) end
-		end
-
-		return true
-	elseif key == IN_ATTACK2 then
-		if pl:CanThrow() and self:GetFireTime() == 0 then
-			pl:SetState(STATE_THROW)
-		end
-
-		return true
+		if SERVER then self:EmitSound("npc/strider/charging.wav", 78, 77) end
 	end
+
+	return true
+end
+
+function ENT:SecondaryAttack(pl)
+	if pl:CanThrow() and self:GetFireTime() == 0 then
+		pl:SetState(STATE_THROW)
+	end
+
+	return true
 end
 
 function ENT:Move(pl, move)

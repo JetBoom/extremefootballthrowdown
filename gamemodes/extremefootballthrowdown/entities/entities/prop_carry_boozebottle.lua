@@ -10,6 +10,8 @@ ENT.IsPropWeapon = true
 ENT.Model = Model("models/props_junk/garbage_glassbottle001a.mdl")
 ENT.ThrowForce = 1000
 
+ENT.MaxActiveSets = 2
+
 ENT.BoneName = "ValveBiped.Bip01_R_Hand"
 ENT.AttachmentOffset = Vector(5, 5, -5)
 ENT.AttachmentAngles = Angle(0, 180, 180)
@@ -20,14 +22,12 @@ function ENT:Initialize()
 	self.BaseClass.Initialize(self)
 end
 
-function ENT:KeyPress(pl, key)
-	if key == IN_ATTACK2 then
-		if pl:CanThrow() then
-			pl:SetState(STATE_THROW)
-		end
-
-		return true
+function ENT:SecondaryAttack(pl)
+	if pl:CanThrow() then
+		pl:SetState(STATE_THROW)
 	end
+
+	return true
 end
 
 function ENT:Move(pl, move)

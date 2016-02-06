@@ -15,7 +15,7 @@ function GM:DoPostProcessing()
 
 	local target = 1.6 - math.Clamp(game.GetTimeScale(), 0, 1) * 0.6
 
-	if CurTime() < GetGlobalFloat("RoundStartTime", 0) then
+	if CurTime() < GetGlobalFloat("RoundStartTime", 0) --[[or self:IsWarmUp()]] then
 		target = target * 0.05
 	end
 

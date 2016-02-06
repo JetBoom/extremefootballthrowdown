@@ -81,17 +81,27 @@ function STATE:HitEntity(pl, hitent, tr, spinny)
 	util.Effect("hit_beatingstick", effectdata, true, true)
 end
 
-function STATE:Think(pl)
+function STATE:ThinkCompensatable(pl)
 	if not (pl:IsOnGround() and pl:WaterLevel() < 2) then
 		pl:EndState(true)
 	elseif SERVER and not pl:GetStateBool() and CurTime() >= pl:GetStateStart() + self.HitTime then
 		pl:SetStateBool(true)
+
+		local comp = pl:ShouldCompensate()
+
+		if comp then
+			pl:LagCompensation(true)
+		end
 
 		for _, tr in ipairs(pl:GetSweepTargets(self.Range, self.FOV)) do
 			local hitent = tr.Entity
 			if hitent:IsPlayer() and not hitent:ImmuneToAll() then
 				self:HitEntity(pl, hitent, tr)
 			end
+		end
+
+		if comp then
+			pl:LagCompensation(false)
 		end
 	end
 end

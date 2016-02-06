@@ -88,7 +88,7 @@ local function nocollidetimer(self, timername)
 		self:SetCollisionGroup(COLLISION_GROUP_PLAYER)
 	end
 
-	timer.Destroy(timername)
+	timer.Remove(timername)
 end
 
 function meta:TemporaryNoCollide(force)
@@ -127,7 +127,7 @@ function meta:IsCarrying()
 end
 
 function meta:CanThrow()
-	return self:IsIdle() and self:IsCarrying() and self:OnGround() and self:GetVelocity():Length() <= 275
+	return self:IsIdle() and self:IsCarrying() and self:OnGround() and self:GetVelocity():LengthSqr() <= 75625
 end
 
 function meta:SetNextMoveVelocity(vel)
@@ -147,7 +147,7 @@ function meta:CanMelee()
 end
 
 function meta:CanCharge()
-	return self:GetState() == STATE_NONE and self:GetStateInteger() == 0 and self:OnGround() and not self:Crouching() and self:GetVelocity():Length() > 290 and self:WaterLevel() <= 1
+	return self:GetState() == STATE_NONE and self:GetStateInteger() == 0 and self:OnGround() and not self:Crouching() and self:GetVelocity():LengthSqr() >= 84100 and self:WaterLevel() <= 1
 end
 
 function meta:CanDodge()
@@ -221,7 +221,7 @@ function meta:GetSweepTargets(range, fov, addfilter, cross, excludeball)
 			local ent = tr.Entity
 			if ent and ent:IsValid() then
 				table.insert(traces, tr)
-				table.insert(trace.filter, ent)
+				table.insert(filter, ent)
 			else
 				break
 			end
@@ -232,7 +232,7 @@ function meta:GetSweepTargets(range, fov, addfilter, cross, excludeball)
 			local ent = tr.Entity
 			if ent and ent:IsValid() then
 				table.insert(traces, tr)
-				table.insert(trace.filter, ent)
+				table.insert(filter, ent)
 			else
 				break
 			end
@@ -245,9 +245,6 @@ function meta:GetSweepTargets(range, fov, addfilter, cross, excludeball)
 
 		ang:RotateAroundAxis(right, fov * -0.5)
 
-		local start = self:WorldSpaceCenter()
-		local trace = {start = start, mins = maxs * -1, maxs = maxs, filter = filter, mask = MASK_SHOT}
-
 		for a=0, fov, 2 do
 			ang:RotateAroundAxis(right, 2)
 			trace.endpos = start + ang:Forward() * (range - size / 2)
@@ -257,7 +254,7 @@ function meta:GetSweepTargets(range, fov, addfilter, cross, excludeball)
 				local ent = tr.Entity
 				if ent and ent:IsValid() then
 					table.insert(traces, tr)
-					table.insert(trace.filter, ent)
+					table.insert(filter, ent)
 				else
 					break
 				end
@@ -268,7 +265,7 @@ function meta:GetSweepTargets(range, fov, addfilter, cross, excludeball)
 				local ent = tr.Entity
 				if ent and ent:IsValid() then
 					table.insert(traces, tr)
-					table.insert(trace.filter, ent)
+					table.insert(filter, ent)
 				else
 					break
 				end
@@ -379,6 +376,14 @@ end
 
 function meta:ShouldBeFrozen()
 	return GAMEMODE.IsEndOfGame
+end
+
+function meta:TranslateWeaponActivity(act)
+	return act
+end
+
+function meta:ShouldCompensate()
+	return self:Ping() <= 150
 end
 
 local OldFreeze = meta.Freeze

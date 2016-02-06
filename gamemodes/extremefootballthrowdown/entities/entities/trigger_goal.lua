@@ -37,7 +37,7 @@ function ENT:AcceptInput(name, activator, caller, args)
 end
 
 function ENT:Touch(ent)
-	if not self.Enabled then return end
+	if not self.Enabled or GAMEMODE:IsWarmUp() then return end
 
 	local istouch
 	local pl

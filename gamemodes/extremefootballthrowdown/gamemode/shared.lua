@@ -42,7 +42,34 @@ cvars.AddChangeCallback("eft_gamelength", function(cvar, oldvalue, newvalue)
 	end
 end)
 
-GM.ScoreLimit = CreateConVar("eft_scorelimit", "7", FCVAR_REPLICATED + FCVAR_ARCHIVE + FCVAR_NOTIFY, "Time in minutes the map lasts for."):GetInt()
+GM.WarmUpLength = CreateConVar("eft_warmuplength", "60", FCVAR_REPLICATED + FCVAR_ARCHIVE + FCVAR_NOTIFY, "Time in seconds for the warmup phase to last."):GetInt()
+if GM.WarmUpLength <= 0 then GM.WarmUpLength = -1 end
+cvars.AddChangeCallback("eft_warmuplength", function(cvar, oldvalue, newvalue)
+	GAMEMODE.WarmUpLength = tonumber(newvalue) or 20
+	if GAMEMODE.WarmUpLength < 0 then
+		GAMEMODE.WarmUpLength = -1
+	end
+end)
+
+GM.OvertimeTime = CreateConVar("eft_overtime", "240", FCVAR_REPLICATED + FCVAR_ARCHIVE + FCVAR_NOTIFY, "Time in seconds for overtime to last."):GetInt()
+if GM.OvertimeTime <= 0 then GM.OvertimeTime = -1 end
+cvars.AddChangeCallback("eft_overtime", function(cvar, oldvalue, newvalue)
+	GAMEMODE.OvertimeTime = tonumber(newvalue) or 20
+	if GAMEMODE.OvertimeTime < 0 then
+		GAMEMODE.OvertimeTime = -1
+	end
+end)
+
+GM.OvertimeScoreBall = CreateConVar("eft_overtime_scoreball", "30", FCVAR_REPLICATED + FCVAR_ARCHIVE + FCVAR_NOTIFY, "During these last seconds of overtime, the ball will be a score ball powerup and the round will never end until someone scores."):GetInt()
+if GM.OvertimeScoreBall <= 0 then GM.OvertimeScoreBall = -1 end
+cvars.AddChangeCallback("eft_overtime_scoreball", function(cvar, oldvalue, newvalue)
+	GAMEMODE.OvertimeScoreBall = tonumber(newvalue) or 20
+	if GAMEMODE.OvertimeScoreBall < 0 then
+		GAMEMODE.OvertimeScoreBall = -1
+	end
+end)
+
+GM.ScoreLimit = CreateConVar("eft_scorelimit", "7", FCVAR_REPLICATED + FCVAR_ARCHIVE + FCVAR_NOTIFY, "How many points to win."):GetInt()
 if GM.ScoreLimit < 0 then GM.ScoreLimit = -1 end
 cvars.AddChangeCallback("eft_scorelimit", function(cvar, oldvalue, newvalue)
 	GAMEMODE.ScoreLimit = tonumber(newvalue) or 7
@@ -57,7 +84,7 @@ cvars.AddChangeCallback("eft_pity", function(cvar, oldvalue, newvalue)
 end)
 
 function team.HasPity(teamid)
-	return GAMEMODE.Pity > 0 and team.GetScore(teamid == TEAM_RED and TEAM_BLUE or TEAM_RED) >= team.GetScore(teamid) + GAMEMODE.Pity
+	return GAMEMODE:IsOvertime() or GAMEMODE.Pity > 0 and team.GetScore(teamid == TEAM_RED and TEAM_BLUE or TEAM_RED) >= team.GetScore(teamid) + GAMEMODE.Pity
 end
 
 GM.RoundLimit = -1
@@ -105,6 +132,8 @@ include("sh_obj_player_extend.lua")
 
 IncludePlayerClasses()
 
+function GM:InRound() return GetGlobalBool("InRound", true) end
+
 function GM:EntityEmitSound(snd)
 	if game.GetTimeScale() ~= 1 then
 		local ent = snd.Entity
@@ -116,6 +145,10 @@ function GM:EntityEmitSound(snd)
 			end
 		end
 	end
+end
+
+function GM:IsWarmUp()
+	return CurTime() <= self.WarmUpLength
 end
 
 function GM:PlayerShouldTaunt(pl, actid)
@@ -132,6 +165,34 @@ function GM:ShouldCollide(enta, entb)
 	end
 
 	return true
+end
+
+function GM:GetOvertime()
+	return GetGlobalBool("overtime", false)
+end
+GM.GetOverTime = GM.GetOvertime
+GM.IsOvertime = GM.GetOvertime
+GM.IsOverTime = GM.GetOvertime
+
+function GM:GetTimeLimit()
+	if GAMEMODE.GameLength > 0 then
+		local time = GAMEMODE.GameLength * 60
+
+		if GAMEMODE.WarmUpLength > 0 then
+			time = time + GAMEMODE.WarmUpLength
+		end
+		if GAMEMODE.OvertimeTime > 0 and GAMEMODE:GetOvertime() then
+			time = time + GAMEMODE.OvertimeTime
+
+			if GAMEMODE.OvertimeScoreBall > 0 and CurTime() < time + 120 then -- Just in case the map breaks, give 2 minutes max for someone to touch the score ball.
+				time = math.max(time, CurTime() + 0.1)
+			end
+		end
+
+		return time
+	end
+
+	return -1
 end
 
 function GM:RecalculateGoalCenters(teamid)
@@ -179,7 +240,7 @@ function GM:GetBallHome()
 	if ball:IsValid() then
 		return ball:GetHome()
 	end
-	
+
 	return vector_origin
 end
 
@@ -250,7 +311,7 @@ function GM:Move(pl, move)
 		move:SetMaxClientSpeed(move:GetMaxClientSpeed() * 0.2)
 	end
 
-	local ret = pl:CallStateFunction("PostMove", move)
+	ret = pl:CallStateFunction("PostMove", move)
 	if ret then
 		if ret == MOVE_OVERRIDE then return true end
 	end
@@ -301,9 +362,9 @@ function GM:KeyPress(pl, key)
 	local carry = pl:GetCarry()
 	if carry:IsValid() and carry.KeyPress and carry:KeyPress(pl, key) then return end
 
-	if key == IN_ATTACK then
+	--[[if key == IN_ATTACK then
 		if pl:CanMelee() then
-			local state = STATE_PUNCH1
+			local state = STATE_PUNCH1]]
 			--[[for _, tr in pairs(pl:GetTargets()) do
 				local hitent = tr.Entity
 				if hitent:IsPlayer() and hitent:GetState() == STATE_KNOCKEDDOWN then
@@ -312,8 +373,8 @@ function GM:KeyPress(pl, key)
 				end
 			end]]
 
-			pl:SetState(state, STATES[state].Time)
-		end
+			--pl:SetState(state--[[, STATES[state].Time]])
+		--[[end
 	elseif key == IN_ATTACK2 then
 		if pl:CanMelee() then
 			local vel = pl:GetVelocity()
@@ -323,7 +384,7 @@ function GM:KeyPress(pl, key)
 				pl:SetState(STATE_DIVETACKLE)
 			end
 		end
-	elseif key == IN_WALK then
+	else]]if key == IN_WALK then
 		if SERVER and pl:IsIdle() and not pl:IsCarrying() then
 			if pl:OnGround() then
 				local dir = vector_origin

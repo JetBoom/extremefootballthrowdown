@@ -203,7 +203,7 @@ function STATE:Think(pl)
 		if tackler:IsValid() and tackler:IsPlayer() then
 			local otherhandid = tackler:LookupBone("ValveBiped.Bip01_R_Hand")
 			if otherhandid and otherhandid > 0 then
-				local pos, ang = tackler:GetBonePosition(otherhandid)
+				local pos = tackler:GetBonePosition(otherhandid)
 				if pos then
 					self:ComputeShadowControl(pl, rag, pos, nil, "ValveBiped.Bip01_Spine2", 1)
 				end

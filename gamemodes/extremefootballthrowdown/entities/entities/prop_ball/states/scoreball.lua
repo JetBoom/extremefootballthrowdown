@@ -13,6 +13,16 @@ if SERVER then
 			gamemode.Call("TeamScored", carrier:Team(), carrier, 1, true)
 		end
 	end
+
+	function STATE:Think(ball)
+		if ball:GetStateEnd() == 0 or CurTime() >= ball:GetStateEnd() then
+			local carrier = ball:GetCarrier()
+			if carrier:IsValid() then
+				gamemode.Call("TeamScored", carrier:Team(), carrier, 1, true)
+				ball:SetDTInt(2, 0)
+			end
+		end
+	end
 end
 
 function STATE:GetBallColor(ball, carrier)

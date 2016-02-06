@@ -11,6 +11,7 @@ ENT.Model = Model("models/props_phx/amraam.mdl")
 ENT.ThrowForce = 900
 
 ENT.DropChance = 0.4
+ENT.MaxActiveSets = 1
 
 ENT.BoneName = "ValveBiped.Bip01_R_Hand"
 ENT.AttachmentOffset = Vector(10, 0, -10)
@@ -35,15 +36,13 @@ function ENT:Initialize()
 	end
 end
 
-function ENT:KeyPress(pl, key)
-	if key == IN_ATTACK2 then
-		if pl:CanThrow() then
-			pl:SetState(STATE_THROW)
-			pl:SetStateNumber(1)
-		end
-
-		return true
+function ENT:SecondaryAttack(pl)
+	if pl:CanThrow() then
+		pl:SetState(STATE_THROW)
+		pl:SetStateNumber(1)
 	end
+
+	return true
 end
 
 function ENT:Move(pl, move)
@@ -63,9 +62,16 @@ end
 local matRope = Material("cable/rope")
 local matGlow = Material("sprites/light_glow02_add")
 function ENT:DrawTranslucent()
-	self:DrawModel()
+	if not self:GetThrown() then
+		self:DrawModel()
+		return
+	end
 
-	if not self:GetThrown() then return end
+	local vel = self:GetVelocity()
+	if vel:Length() > 0 then
+		self:SetRenderAngles(vel:Angle())
+		self:DrawModel()
+	end
 
 	local owner = self:GetOwner()
 	local col
@@ -75,7 +81,7 @@ function ENT:DrawTranslucent()
 		col = color_white
 	end
 
-	local pos1 = self:GetPos() - self:GetForward() * 32
+	local pos1 = self:GetPos() - vel:GetNormalized() * 32
 	render.SetMaterial(matGlow)
 	render.DrawSprite(pos1, 92, 92, col)
 	render.DrawSprite(pos1, 64, 64, color_white)
@@ -198,7 +204,7 @@ function ENT:OnThink()
 
 			self.m_GuideAngles = ang
 
-			self:SetAngles(ang)
+			--phys:SetAngles(ang)
 			local phys = self:GetPhysicsObject()
 			if phys:IsValid() then
 				phys:SetVelocityInstantaneous(ang:Forward() * self.ThrowForce)

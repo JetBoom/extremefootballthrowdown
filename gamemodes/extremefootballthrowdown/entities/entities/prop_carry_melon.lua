@@ -14,14 +14,12 @@ ENT.BoneName = "ValveBiped.Bip01_R_Hand"
 ENT.AttachmentOffset = Vector(4, 8, 0)
 ENT.AttachmentAngles = Angle(90, 0, 90)
 
-function ENT:KeyPress(pl, key)
-	if key == IN_ATTACK2 then
-		if pl:CanThrow() then
-			pl:SetState(STATE_THROW)
-		end
-
-		return true
+function ENT:SecondaryAttack(pl)
+	if pl:CanThrow() then
+		pl:SetState(STATE_THROW)
 	end
+
+	return true
 end
 
 function ENT:Move(pl, move)

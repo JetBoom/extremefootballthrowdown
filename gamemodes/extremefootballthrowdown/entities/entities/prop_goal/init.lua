@@ -25,7 +25,7 @@ function ENT:KeyValue(key, value)
 end
 
 function ENT:Touch(ent)
-	if ent:IsPlayer() then
+	if ent:IsPlayer() and not GAMEMODE:IsWarmUp() then
 		local carry = ent:GetCarry()
 		if carry:IsValid() and GAMEMODE:GetBall() == carry then
 			local myteam = self:GetTeamID()

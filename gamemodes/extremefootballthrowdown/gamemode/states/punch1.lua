@@ -15,7 +15,7 @@ function STATE:Started(pl, oldstate)
 end
 
 if SERVER then
-function STATE:Ended(pl, newstate)
+--[[function STATE:Ended(pl, newstate)
 	if newstate == STATE_NONE then
 		for _, tr in ipairs(pl:GetTargets()) do
 			local hitent = tr.Entity
@@ -24,7 +24,7 @@ function STATE:Ended(pl, newstate)
 			end
 		end
 	end
-end
+end]]
 
 function STATE:OnChargedInto(pl, otherpl)
 	if CurTime() >= pl:GetStateEnd() - 0.2 and pl:TargetsContain(otherpl) then
@@ -60,10 +60,29 @@ function STATE:Move(pl, move)
 	return MOVE_STOP
 end
 
-function STATE:Think(pl)
+function STATE:ThinkCompensatable(pl)
 	if not (pl:IsOnGround() and pl:WaterLevel() < 2) then
 		pl:EndState(true)
+	elseif CurTime() >= pl:GetStateEnd() then
+		if SERVER then
+			pl:LagCompensation(true)
+
+			for _, tr in ipairs(pl:GetTargets()) do
+				local hitent = tr.Entity
+				if hitent:IsPlayer() and (hitent.CrossCounteredBy ~= pl or CurTime() >= (hitent.CrossCounteredTime or -math.huge) + 1) then
+					pl:PunchHit(hitent, tr)
+				end
+			end
+
+			pl:LagCompensation(false)
+		end
+
+		pl:EndState(true)
 	end
+end
+
+function STATE:GoToNextState()
+	return true
 end
 
 function STATE:CalcMainActivity(pl, velocity)

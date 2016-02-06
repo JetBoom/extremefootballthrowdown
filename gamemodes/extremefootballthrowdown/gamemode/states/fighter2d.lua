@@ -200,24 +200,32 @@ function STATE:Think(pl)
 	end
 end
 
-function STATE:KeyPress(pl, key)
-	if key == IN_ATTACK then
-		if pl:GetStateInteger() == STATE_FIGHTER2D_NONE and not pl:GetStateBool() then
-			pl:DoAttackEvent()
-			pl:SetStateInteger(STATE_FIGHTER2D_PUNCHING)
-			pl:SetStateNumber(CurTime() + self.PunchDelay)
-			pl.Punch = true
-		end
-	elseif key == IN_ATTACK2 then
-		if pl:GetStateInteger() == STATE_FIGHTER2D_NONE and pl:OnGround() and not pl:GetStateBool() then
-			--pl:DoAnimationEvent(ACT_GMOD_GESTURE_MELEE_SHOVE_2HAND)
-			pl:SetStateInteger(STATE_FIGHTER2D_SHOVING)
-			pl:SetStateNumber(CurTime() + self.ShoveTime)
-		end
-	elseif key == IN_RELOAD then
-		if pl:GetStateInteger() == STATE_FIGHTER2D_NONE and pl:OnGround() then
-			pl:SetStateBool(true)
-		end
+function STATE:PrimaryAttack(pl)
+	if pl:GetStateInteger() == STATE_FIGHTER2D_NONE and not pl:GetStateBool() then
+		pl:DoAttackEvent()
+		pl:SetStateInteger(STATE_FIGHTER2D_PUNCHING)
+		pl:SetStateNumber(CurTime() + self.PunchDelay)
+		pl.Punch = true
+
+		return true
+	end
+end
+
+function STATE:SecondaryAttack(pl)
+	if pl:GetStateInteger() == STATE_FIGHTER2D_NONE and pl:OnGround() and not pl:GetStateBool() then
+		--pl:DoAnimationEvent(ACT_GMOD_GESTURE_MELEE_SHOVE_2HAND)
+		pl:SetStateInteger(STATE_FIGHTER2D_SHOVING)
+		pl:SetStateNumber(CurTime() + self.ShoveTime)
+
+		return true
+	end
+end
+
+function STATE:Reload(pl)
+	if pl:GetStateInteger() == STATE_FIGHTER2D_NONE and pl:OnGround() and not pl:GetStateBool() then
+		pl:SetStateBool(true)
+
+		return true
 	end
 end
 

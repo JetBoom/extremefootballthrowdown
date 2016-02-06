@@ -272,8 +272,6 @@ function GM:ShowTeam()
 	
 		TeamPanel = vgui.CreateFromTable( vgui_Splash )
 		TeamPanel:SetHeaderText( "Choose Team" )
-		
-		local PlayerIsInTeam = false
 
 		local AllTeams = team.GetAllTeams()
 		for ID, TeamInfo in SortedPairs ( AllTeams ) do
@@ -296,43 +294,12 @@ function GM:ShowTeam()
 				
 				if (  IsValid( LocalPlayer() ) && LocalPlayer():Team() == ID ) then
 					btn:SetDisabled( true )
-					PlayerIsInTeam = true
 				end
 				
 			end
 			
 		end
-		if GAMEMODE.UseAutoJoin then
-			TeamPanel:AddSpacer( 10 )			
-			local btn = TeamPanel:AddSelectButton( "Automatically Choose Team")
-			btn.m_colBackground = Color( 255,255,255 )
-			btn.Think = function( self ) 
-
-				local AutoID = 1
-				
-				for ID, TeamInfo in SortedPairs ( AllTeams ) do
-					if ID != TEAM_SPECTATOR and team.Joinable( ID ) and not GAMEMODE:TeamHasEnoughPlayers( ID ) then
-						local score = TeamInfo.Score
-						local players = team.NumPlayers( ID )
-						
-						if score < team.GetScore(AutoID) then 
-							AutoID = ID 
-						end
-						if players < team.NumPlayers( AutoID ) then
-							AutoID = ID 
-						end
-					end
-				end
-			
-				self.DoClick = function(self) 
-					RunConsoleCommand( "changeteam", AutoID)
-					surface.PlaySound( Sound("buttons/lightswitch2.wav") ) 
-					TeamPanel:Remove() 
-				end
-				self:SetDisabled( LocalPlayer():Team() == AutoID )
-			
-			end
-		end
+		
 		TeamPanel:AddCancelButton()
 		
 	end

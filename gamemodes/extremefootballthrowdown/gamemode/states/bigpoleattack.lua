@@ -77,13 +77,19 @@ function STATE:HitEntity(pl, hitent, tr)
 	util.Effect("hit_bigpole", effectdata, true, true)
 end
 
-function STATE:Think(pl)
+function STATE:ThinkCompensatable(pl)
 	if not (pl:IsOnGround() and pl:WaterLevel() < 2) then
 		pl:EndState(true)
 	elseif SERVER and not pl:GetStateBool() and CurTime() >= pl:GetStateStart() + self.HitTime then
 		pl:SetStateBool(true)
 		if SERVER then
 			pl:EmitSound("eft/bigpole_swing.ogg", 75, math.random(97, 103))
+		end
+
+		local comp = pl:ShouldCompensate()
+
+		if comp then
+			pl:LagCompensation(true)
 		end
 
 		for _, tr in ipairs(pl:GetSweepTargets(self.Range, self.FOV, nil, nil, true)) do
@@ -125,6 +131,10 @@ function STATE:Think(pl)
 					end
 				end
 			end
+		end
+
+		if comp then
+			pl:LagCompensation(false)
 		end
 	end
 end

@@ -62,6 +62,8 @@ function ENT:OnRemove()
 end
 
 function ENT:ReturnHome()
+	GAMEMODE.SuppressTimeLimit = nil
+
 	self:SetCarrier(NULL)
 	self:SetAutoReturn(0)
 
@@ -74,7 +76,7 @@ function ENT:ReturnHome()
 	GAMEMODE:LocalSound("eft/ballreset.ogg")
 
 	local effectdata = EffectData()
-		effectdata:SetOrigin(self:GetPos())
+	effectdata:SetOrigin(self:GetPos())
 	util.Effect("ballreset", effectdata, true, true)
 
 	GAMEMODE:BroadcastAction("Ball", "reset")
@@ -83,8 +85,7 @@ function ENT:ReturnHome()
 	self:CallStateFunction("Returned")
 	self:SetState(0)
 
-	local effectdata = EffectData()
-		effectdata:SetOrigin(self:GetPos())
+	effectdata:SetOrigin(self:GetPos())
 	util.Effect("ballreset", effectdata, true, true)
 end
 ENT.Reset = ENT.ReturnHome
@@ -105,6 +106,14 @@ function ENT:Think()
 
 	if carrier:IsValid() and carrier:OnGround() then
 		self.LastOnGround = CurTime()
+	end
+
+	if self:OverTimeScoreBall() and self:GetState() ~= BALL_STATE_SCOREBALL then
+		local timeleft = GAMEMODE:GetGameTimeLeft() - 0.11
+		if timeleft < 0 then
+			timeleft = 0
+		end
+		self:SetState(BALL_STATE_SCOREBALL, timeleft)
 	end
 
 	if self:GetAutoReturn() > 0 and CurTime() >= self:GetAutoReturn()
@@ -157,7 +166,7 @@ function ENT:UpdateNearestGoal()
 end
 
 function ENT:CheckScoring()
-	if not GetGlobalBool("InRound", true) then return end
+	if not GetGlobalBool("InRound", true) or GAMEMODE:IsWarmUp() then return end
 
 	-- Some damn edgy coding incoming.
 	local carrier = self:GetCarrier()
@@ -207,16 +216,16 @@ function ENT:CheckScoringPhys()
 	end
 end
 
-function ENT:PhysicsUpdate(phys)
+function ENT:PhysicsUpdate(phys, dt)
 	phys:Wake()
 
-	self:CallStateFunction("PhysicsUpdate", phys)
+	self:CallStateFunction("PhysicsUpdate", phys, dt)
 end
 
 function ENT:Touch(ent)
 	if self:CallStateFunction("PreTouch", ent) then return end
 
-	if ent:IsPlayer() and not self:GetCarrier():IsValid() and ent:Alive() and not ent:IsCarrying()
+	if ent:IsPlayer() and not self:GetCarrier():IsValid() and ent:Alive() and not ent:IsCarrying() and not GAMEMODE:IsWarmUp()
 	and ent:CallStateFunction("CanPickup", self) and (self:GetLastCarrier() ~= ent or CurTime() > (self.m_PickupImmunity or 0))
 	and (ent:Team() ~= self:GetLastCarrierTeam() or CurTime() > (self.m_TeamPickupImmunity or 0)) then
 		if team.HasPlayers(ent:Team() == TEAM_RED and TEAM_BLUE or TEAM_RED) then
@@ -265,6 +274,8 @@ function ENT:Drop(throwforce, suicide)
 	end
 
 	if throwforce then
+		GAMEMODE.SuppressTimeLimit = CurTime() + 5
+
 		self:Input("onthrown", carrier, carrier)
 
 		if carrier:IsValid() then

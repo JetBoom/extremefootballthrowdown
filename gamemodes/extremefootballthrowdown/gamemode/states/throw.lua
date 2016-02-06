@@ -51,7 +51,13 @@ function STATE:GetThrowPower(pl)
 end
 
 function STATE:GetThrowForce(pl)
-	return (pl:GetCarry().ThrowForce or self.ThrowForce) * ((1 + self:GetThrowPower(pl)) / 2)
+	local carry = pl:GetCarry()
+
+	local baseforce = carry.GetThrowForce and carry:GetThrowForce() or carry.ThrowForce or self.ThrowForce
+	local chargemul = (1 + self:GetThrowPower(pl)) / 2
+	local objectmul = carry.GetThrowForceMultiplier and carry:GetThrowForceMultiplier(pl) or 1
+
+	return baseforce * objectmul * chargemul
 end
 
 function STATE:IsIdle(pl)

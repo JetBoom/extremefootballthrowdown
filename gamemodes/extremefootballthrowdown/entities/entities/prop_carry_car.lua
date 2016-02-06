@@ -48,15 +48,13 @@ function ENT:ShouldNotCollide(ent)
 	if ent:IsWorld() and self:GetThrown() then return true end
 end
 
-function ENT:KeyPress(pl, key)
-	if key == IN_ATTACK2 then
-		if pl:CanThrow() then
-			pl:SetState(STATE_THROW)
-			pl:SetStateNumber(1)
-		end
-
-		return true
+function ENT:SecondaryAttack(pl)
+	if pl:CanThrow() then
+		pl:SetState(STATE_THROW)
+		pl:SetStateNumber(1)
 	end
+
+	return true
 end
 
 function ENT:Move(pl, move)
@@ -72,7 +70,7 @@ end
 
 function ENT:PhysicsUpdate(phys)
 	if self:GetThrown() and self.Dir then
-		phys:SetAngles(self.Dir:Angle())
+		--phys:SetAngles(self.Dir:Angle())
 		phys:SetVelocityInstantaneous((0.1 + math.Clamp((CurTime() - self.Created) / self.AccelTime, 0, 1) * 0.9) * self.ThrowForce * self.Dir)
 
 		self.Dir.z = self.Dir.z - FrameTime() * 0.2
@@ -135,6 +133,10 @@ end
 
 local matShiny = Material("models/shiny")
 function ENT:Draw()
+	if self:GetThrown() then
+		self:SetRenderAngles(self:GetVelocity():Angle())
+	end
+
 	self.BaseClass.Draw(self)
 
 	render.ModelMaterialOverride(matShiny)

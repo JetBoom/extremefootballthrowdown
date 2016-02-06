@@ -16,28 +16,30 @@ ENT.AttachmentAngles = Angle(0, 0, 180)
 
 ENT.Mass = 150
 
+ENT.AllowDuringOverTime = true
+
 function ENT:Initialize()
 	self.BaseClass.Initialize(self)
 
 	self.NextTouch = {}
 end
 
-function ENT:KeyPress(pl, key)
-	if key == IN_ATTACK then
-		if pl:CanMelee() then
-			pl:SetState(STATE_BIGPOLEATTACK, STATES[STATE_BIGPOLEATTACK].Time)
-		end
-
-		return true
-	elseif key == IN_ATTACK2 then
-		if pl:CanThrow() then
-			pl:SetState(STATE_THROW)
-		elseif pl:GetState() == STATE_BIGPOLEATTACK and not pl:GetStateBool() and CurTime() < pl:GetStateStart() + STATES[STATE_BIGPOLEATTACK].HitTime then
-			pl:EndState()
-		end
-
-		return true
+function ENT:PrimaryAttack(pl)
+	if pl:CanMelee() then
+		pl:SetState(STATE_BIGPOLEATTACK, STATES[STATE_BIGPOLEATTACK].Time)
 	end
+
+	return true
+end
+
+function ENT:SecondaryAttack(pl)
+	if pl:CanThrow() then
+		pl:SetState(STATE_THROW)
+	elseif pl:GetState() == STATE_BIGPOLEATTACK and not pl:GetStateBool() and CurTime() < pl:GetStateStart() + STATES[STATE_BIGPOLEATTACK].HitTime then
+		pl:EndState()
+	end
+
+	return true
 end
 
 function ENT:CalcMainActivity(pl, velocity)

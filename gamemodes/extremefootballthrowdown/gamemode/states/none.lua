@@ -20,10 +20,10 @@ end
 
 function STATE:HighJumpThink(pl)
 	if pl:GetStateNumber() == 0 then
-		if pl:Crouching() and pl:IsOnGround() and pl:GetVelocity():Length() <= 16 and not pl:IsCarrying() then
+		if pl:Crouching() and pl:IsOnGround() and pl:GetVelocity():LengthSqr() <= 256 and not pl:IsCarrying() then
 			pl:SetStateNumber(CurTime() + 1)
 		end
-	elseif not pl:Crouching() or not pl:OnGround() or pl:GetVelocity():Length() > 16 or pl:IsCarrying() then
+	elseif not pl:Crouching() or not pl:OnGround() or pl:GetVelocity():LengthSqr() > 256 or pl:IsCarrying() then
 		pl:SetStateNumber(0)
 	end
 end
@@ -34,7 +34,16 @@ function STATE:Think(pl)
 
 	if not pl:CanCharge() then return end
 
-	for _, tr in pairs(pl:GetTargets()) do
+	--[[local comp = pl:ShouldCompensate()
+	if comp then
+		pl:LagCompensation(true)
+	end]]
+	local targets = pl:GetTargets()
+	--[[if comp then
+		pl:LagCompensation(false)
+	end]]
+
+	for _, tr in pairs(targets) do
 		if not pl:CanCharge() then return end
 
 		local hitent = tr.Entity
@@ -74,11 +83,15 @@ end
 function STATE:KeyPress(pl, key)
 	--[[if key == IN_ATTACK2 then
 		pl:SetStateInteger(1)
-	else]] if key == IN_RELOAD then
+	elseif key == IN_RELOAD then
 		pl:SetStateInteger(-1)
-	elseif key == IN_JUMP and self:CanHighJump(pl) then
+	else]]if key == IN_JUMP and self:CanHighJump(pl) then
 		pl:SetState(STATE_HIGHJUMP, 5)
 	end
+end
+
+function STATE:Reload(pl)
+	pl:SetStateInteger(-1)
 end
 
 function STATE:CanHighJump(pl)

@@ -37,6 +37,14 @@ function ENT:Move(pl, move)
 	end
 end
 
+function ENT:OverTimeScoreBall()
+	return not GAMEMODE.IsEndOfGame and GAMEMODE:IsOverTime() and GAMEMODE.OvertimeScoreBall > 0 and GAMEMODE:GetGameTimeLeft() <= GAMEMODE.OvertimeScoreBall and team.GetScore(TEAM_RED) == team.GetScore(TEAM_BLUE)
+end
+
+function ENT:GetThrowForceMultiplier(pl)
+	return self:CallStateFunction("GetThrowForceMultiplier", pl)
+end
+
 function ENT:GetLastCarrier()
 	return self:GetDTEntity(3)
 end
@@ -128,17 +136,19 @@ function ENT:GetStateEntity()
 	return self:GetDTEntity(2)
 end
 
-function ENT:KeyPress(pl, key)
-	if key == IN_ATTACK2 then
-		if pl:CanThrow() then
-			pl:SetState(STATE_THROW)
+function ENT:SecondaryAttack(pl)
+	if pl:CanThrow() then
+		pl:SetState(STATE_THROW)
 
-			return true
-		end
+		return true
 	end
 end
 
 function ENT:SetState(state, duration)
+	if self:OverTimeScoreBall() and state ~= BALL_STATE_SCOREBALL then
+		return
+	end
+
 	if SERVER then
 		local samestate = self:GetState() == state
 		if not samestate then
@@ -201,6 +211,8 @@ function ENT:SetCarrier(ent)
 
 	local phys = self:GetPhysicsObject()
 	if ent:IsValid() then
+		GAMEMODE.SuppressTimeLimit = nil
+
 		local entteam = ent:Team()
 
 		if entteam ~= self.LastCarrierTeam then
@@ -222,6 +234,8 @@ function ENT:SetCarrier(ent)
 
 		GAMEMODE:BroadcastAction(ent:Name(), "picked up the ball!")
 
+		self:CallStateFunction("PickedUp", ent)
+
 		self.NextUpdateNearestGoal = 0
 		self:UpdateNearestGoal()
 	else
@@ -231,6 +245,10 @@ function ENT:SetCarrier(ent)
 
 	for _, p in pairs(player.GetAll()) do
 		if p ~= ent and p:GetCarrying() == self then p:SetCarrying(NULL) end
+	end
+
+	if prevcarrier ~= ent then
+		self:CallStateFunction("CarrierChanged", ent, prevcarrier)
 	end
 end
 

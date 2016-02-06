@@ -18,7 +18,6 @@ end
 
 local matRefraction	= Material("refract_ring")
 function EFFECT:Render()
-	local pos = self.Pos
 	local delta = math.Clamp(math.min(CurTime() - self.StartTime, self.DieTime - CurTime()) / self.LifeTime, 0, 1) ^ 2
 
 	matRefraction:SetFloat("$refractamount", delta)

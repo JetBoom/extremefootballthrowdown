@@ -18,6 +18,20 @@ local PrevFrameHealth = 100
 local color_black_alpha160 = Color(0, 0, 0, 160)
 local color_black_alpha90 = Color(0, 0, 0, 90)
 
+local vector_origin = vector_origin
+local STEPSOUNDTIME_NORMAL = STEPSOUNDTIME_NORMAL
+local STEPSOUNDTIME_WATER_FOOT = STEPSOUNDTIME_WATER_FOOT
+local STEPSOUNDTIME_ON_LADDER = STEPSOUNDTIME_ON_LADDER
+local STEPSOUNDTIME_WATER_KNEE = STEPSOUNDTIME_WATER_KNEE
+local TEXT_ALIGN_CENTER = TEXT_ALIGN_CENTER
+local TEXT_ALIGN_TOP = TEXT_ALIGN_TOP
+local TEXT_ALIGN_BOTTOM = TEXT_ALIGN_BOTTOM
+local TEXT_ALIGN_LEFT = TEXT_ALIGN_LEFT
+local TEXT_ALIGN_RIGHT = TEXT_ALIGN_RIGHT
+local ScrH = ScrH
+local math_max = math.max
+local math_min = math.min
+
 local tempColRed = Color(1, 1, 1)
 local tempColBlue = Color(1, 1, 1)
 
@@ -33,7 +47,7 @@ end)
 language.Add("prop_ball", "Ball")
 
 function BetterScreenScale()
-	return math.max(0.6, math.min(1, ScrH() / 1080))
+	return math_max(0.6, math_min(1, ScrH() / 1080))
 end
 
 function GM:HookGetLocal()
@@ -41,6 +55,13 @@ function GM:HookGetLocal()
 	self.PostDrawTranslucentRenderables = self._PostDrawTranslucentRenderables
 	self.PrePlayerDraw = self._PrePlayerDraw
 	self.PostPlayerDraw = self._PostPlayerDraw
+end
+
+local matRing = Material("effects/select_ring")
+function GM:DrawCircle(x, y, radius, color)
+	surface.SetMaterial(matRing)
+	surface.SetDrawColor(color)
+	surface.DrawTexturedRect(x - radius, y - radius, radius * 2, radius * 2)
 end
 
 function GM:HUDShouldDraw(name)
@@ -53,7 +74,7 @@ end
 
 function GM:PlayerStepSoundTime(pl, iType, bWalking)
 	if iType == STEPSOUNDTIME_NORMAL or iType == STEPSOUNDTIME_WATER_FOOT then
-		return math.max(200, 520 - pl:GetVelocity():Length())
+		return math_max(200, 520 - pl:GetVelocity():Length())
 	end
 
 	if iType == STEPSOUNDTIME_ON_LADDER then
@@ -78,7 +99,7 @@ function GM:_CreateMove(cmd)
 	local ang = cmd:GetViewAngles()
 
 	self.CameraYawLerp = math.Clamp(self.CameraYawLerp + math.AngleDifference(self.PrevCameraYaw, ang.yaw) * FrameTime() * 120, -90, 90)
-	self.CameraYawLerp = math.Approach(self.CameraYawLerp, 0, FrameTime() * math.max(15, math.abs(self.CameraYawLerp) ^ 1.15))
+	self.CameraYawLerp = math.Approach(self.CameraYawLerp, 0, FrameTime() * math_max(15, math.abs(self.CameraYawLerp) ^ 1.15))
 	self.PrevCameraYaw = ang.yaw
 
 	return MySelf:CallStateFunction("CreateMove", cmd) or self.BaseClass.CreateMove(self, cmd)
@@ -156,7 +177,6 @@ local LookBehindAngles = {
 	[4] = Angle(0, 0, -30),
 	[6] = Angle(0, 0, -80)
 }
-local visibletrace = {mask = MASK_SOLID_BRUSHONLY}
 function GM:Think()
 	self.BaseClass.Think(self)
 
@@ -197,7 +217,7 @@ function GM:Think()
 				pl.LookBehindScaled = true
 				for boneid, scale in pairs(LookBehindAngles) do
 					pl:ManipulateBoneAngles(boneid, scale * pl.LookBehind)
-				end 
+				end
 			end
 		end
 
@@ -229,7 +249,7 @@ function GM:PostProcessPermitted()
 end
 
 function GM:PositionScoreboard(ScoreBoard)
-	ScoreBoard:SetSize(math.min(800, ScrW() - 32), math.min(800, ScrH() - 32))
+	ScoreBoard:SetSize(math_min(800, ScrW() - 32), math_min(800, ScrH() - 32))
 	ScoreBoard:Center()
 end
 
@@ -249,25 +269,25 @@ end
 
 function HSVtoRGB(h)
 	local r, g, b
-	local f, p, q, t
-	
+	local f, i, q, t
+
 	-- Make sure our arguments stay in-range
-	h = math.max(0, math.min(360, h))
-	
+	h = math_max(0, math_min(360, h))
+
 	s = 1
 	v = 1
-	
+
 	if s == 0 then
 		-- Achromatic (grey)
-		local gray = math.Round(v * 255)
+		local gray = math.floor(v * 255)
 		return Color(gray, gray, gray)
 	end
-	
+
 	h = h / 60 -- sector 0 to 5
-	local i = math.floor(h)
-	local f = h - i -- factorial part of h
-	local q = v * (1 - f)
-	local t = v * (1 - (1 - f))
+	i = math.floor(h)
+	f = h - i -- factorial part of h
+	q = v * (1 - f)
+	t = v * (1 - (1 - f))
 
 	if i == 0 then
 		r = v
@@ -294,8 +314,8 @@ function HSVtoRGB(h)
 		g = 0
 		b = q
 	end
-	
-	return math.Round(r * 255), math.Round(g * 255), math.Round(b * 255)
+
+	return math.floor(r * 255), math.floor(g * 255), math.floor(b * 255)
 end
 
 function GM:_PostDrawTranslucentRenderables()
@@ -524,12 +544,12 @@ function GM:Draw3DBallPowerup()
 	local time = CurTime()
 	local statetable = ball:GetStateTable()
 	local col = table.Copy(ball:CallStateFunction("GetBallColor", ball:GetCarrier()) or color_white)
-	local timeleft = ball:GetStateEnd() == 0 and -1 or math.max(0, ball:GetStateEnd() - time)
+	local timeleft = ball:GetStateEnd() == 0 and -1 or math_max(0, ball:GetStateEnd() - time)
 	local fadein
 	if timeleft == -1 then
 		fadein = math.Clamp((time - ball:GetStateStart()) / 0.5, 0, 1)
 	else
-		fadein = math.Clamp(math.min(timeleft, time - ball:GetStateStart()) / 0.5, 0, 1)
+		fadein = math.Clamp(math_min(timeleft, time - ball:GetStateStart()) / 0.5, 0, 1)
 	end
 
 	col.a = 255 * fadein * (1 - math.abs(math.sin(time * math.pi * 4)) * 0.25)
@@ -663,6 +683,61 @@ function GM:Draw3DGameState()
 	elseif self.RoundWinner then
 		self:Draw3DRoundWinner()
 	end
+
+	if self.RoundEndScrollOT then
+		self:Draw3DOvertime()
+	elseif self:IsWarmUp() then
+		self:Draw3DWarmUp()
+	end
+end
+
+function GM:Draw3DWarmUp()
+	local realtime = RealTime()
+
+	local barcol = Color(HSVtoRGB(math.abs(math.sin(realtime * 6)) * 60))
+
+	local ang = EyeAngles3D2D()
+	ang:RotateAroundAxis(ang:Forward(), 30)
+	ang:RotateAroundAxis(ang:Right(), self.CameraYawLerp / 3)
+
+	--render.PushFilterMin(TEXFILTER.ANISOTROPIC)
+	--render.PushFilterMag(TEXFILTER.ANISOTROPIC)
+	cam.IgnoreZ(true)
+	cam.Start3D2D(EyePos3D2DScreen(0, 256), ang, 0.9)
+
+		draw.SimpleText("WARM UP: "..math.ceil(self.WarmUpLength - CurTime()), "eft_3dwinnertext", 0, 0, barcol, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+
+	cam.End3D2D()
+	cam.IgnoreZ(false)
+	--render.PopFilterMin()
+	--render.PopFilterMag()
+end
+
+function GM:Draw3DOvertime()
+	if self.RoundEndScrollOT >= 1 then return end
+
+	local realtime = RealTime()
+
+	self.RoundEndScrollOT = self.RoundEndScrollOT + RealFrameTime() * (math.abs(self.RoundEndScrollOT - 0.5) <= 0.1 and 0.03 or 0.5)
+
+	local distfromcenter = math.abs(self.RoundEndScrollOT - 0.5) * 2
+	local size = 1.25 - distfromcenter * 0.5
+	local barcol = Color(HSVtoRGB((realtime * 400) % 360))
+
+	local ang = EyeAngles3D2D()
+	ang:RotateAroundAxis(ang:Forward(), -30)
+
+	--render.PushFilterMin(TEXFILTER.ANISOTROPIC)
+	--render.PushFilterMag(TEXFILTER.ANISOTROPIC)
+	cam.IgnoreZ(true)
+	cam.Start3D2D(EyePos3D2DScreen(1200 - self.RoundEndScrollOT * 2400, 0), ang, size)
+
+		draw.SimpleText("OVER TIME!", "eft_3dwinnertext", 0, 0, barcol, TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
+
+	cam.End3D2D()
+	cam.IgnoreZ(false)
+	--render.PopFilterMin()
+	--render.PopFilterMag()
 end
 
 function GM:Draw3DTeamScores()
@@ -709,8 +784,17 @@ end
 
 local colPlusIcon = Color(255, 255, 255)
 -- And now presenting, the most expensive health bar in the world!
+local numbox = 25
+local step = 100 / numbox
+local healthw, healthh = 320, 52
+local boxw = healthw * 0.1
+local hpr_1 = healthh * 0.45
+local hpr_2 = healthw * 0.75
+local hpr_3 = healthh * 0.1
+local hpr_4 = healthw * 0.05
+local hpr_5 = healthh * 0.5
+local hpr_6 = healthh * 0.01
 function GM:Draw3DHealthBar()
-	local w, h = 320, 52
 	local time = CurTime()
 	local health = OldHealth
 	local lp = LocalPlayer()
@@ -735,33 +819,32 @@ function GM:Draw3DHealthBar()
 	cam.IgnoreZ(true)
 	cam.Start3D2D(EyePos3D2DScreen(-512, -512), camang, 1)
 
-		local boxw = w * 0.1
-
-		draw.RoundedBoxEx(16, 0, 0, boxw, h, color_black_alpha160, true, false, true, false)
+		draw.RoundedBoxEx(16, 0, 0, boxw, healthh, color_black_alpha160, true, false, true, false)
 		surface.SetDrawColor(0, 0, 0, 160)
-		surface.DrawRect(boxw, h * 0.45, w * 0.75, h * 0.1)
+		surface.DrawRect(boxw, hpr_1, hpr_2, hpr_3)
 
-		draw.SimpleText("HP", "eft_3dhealthbar", w * 0.05, h * 0.5, colPlusIcon, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+		draw.SimpleText("HP", "eft_3dhealthbar", hpr_4, hpr_5, colPlusIcon, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 
 		if lp:Alive() and health > 0 then
-			local numbox = 50
-			local bw = (w - boxw) / numbox * (0.75 + math.sin(time * 2) * 0.01)
+			local bw = (healthw - boxw) / numbox * (0.75 + math.sin(time * 2) * 0.01)
 			local space = bw * 1.5
 			local hx = boxw
-			for i=0, 100, 100 / numbox do
+			local r, g, b
+			local t60 = time * 60
+			local t3 = time * 3
+			for i=0, 100, step do
 				if health < i then break end
 
-				local bh = h * math.abs(math.sin(time * 3 + i * 0.8)) + i * h * 0.01
+				local bh = healthh * math.abs(math.sin(t3 + i * 0.8)) + i * hpr_6
 
 				if realhealth < i then
 					surface.SetDrawColor(255, 255, 255, d * 220)
-					--bh = bh * (1 + d * 0.5)
 				else
-					local r, g, b = HSVtoRGB((time * 60 + i) % 360)
+					r, g, b = HSVtoRGB((t60 + i) % 360)
 					surface.SetDrawColor(r, g, b, 220)
 				end
 
-				surface.DrawRect(hx, (h - bh) / 2, bw, bh)
+				surface.DrawRect(hx, (healthh - bh) / 2, bw, bh)
 
 				hx = hx + space
 			end
@@ -773,15 +856,12 @@ function GM:Draw3DHealthBar()
 	--render.PopFilterMag()
 end
 
-local matRing = Material("effects/select_ring")
 function GM:Draw3DBallIndicator()
 	local ball = self:GetBall()
 	if not ball:IsValid() then return end
 
 	local eyepos = EyePos()
 	local ballpos = ball:GetPos()
-
-	local wid, hei = 64, 64
 
 	local dir = (ballpos - eyepos):GetNormalized()
 	if eyepos:Distance(ballpos) >= 1024 then
@@ -810,7 +890,7 @@ function GM:Draw3DBallIndicator()
 		if not carrier:IsValid() and autoreturn > 0 then
 			local delta = autoreturn - CurTime()
 			if delta <= 5 then
-				draw.SimpleText(string.ToMinutesSecondsMilliseconds(math.max(0, delta)), "eft_3dballtextsmall", 0, -42, col, TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
+				draw.SimpleText(string.ToMinutesSecondsMilliseconds(math_max(0, delta)), "eft_3dballtextsmall", 0, -42, col, TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
 			end
 		end
 
@@ -863,9 +943,9 @@ function GM:CalcView(pl, origin, angles, fov, znear, zfar)
 			local hitpos = tr.Hit and tr.HitPos + (tr.HitPos - origin):GetNormalized() * 4 or tr.HitPos
 
 			if tr.Hit then
-				lerpdist = math.min(lerpdist, hitpos:Distance(origin))
+				lerpdist = math_min(lerpdist, hitpos:Distance(origin))
 			else
-				lerpdist = math.min(256, lerpdist + FrameTime() * 300)
+				lerpdist = math_min(256, lerpdist + FrameTime() * 300)
 			end
 
 			origin = hitpos
@@ -898,10 +978,10 @@ function GM:CalcView(pl, origin, angles, fov, znear, zfar)
 		fov = fov + fov * math.Clamp(math.abs(angles:Forward():Dot(vel:GetNormalized())) * ((speed - 100) / 250), 0, 1) * 0.15
 
 		-- View rolling
-		targetroll = targetroll + vel:GetNormalized():Dot(angles:Right()) * math.min(30, speed / 100)
+		targetroll = targetroll + vel:GetNormalized():Dot(angles:Right()) * math_min(30, speed / 100)
 	end
 
-	roll = math.Approach(roll, targetroll, math.max(0.25, math.sqrt(math.abs(roll))) * 30 * FrameTime())
+	roll = math.Approach(roll, targetroll, math_max(0.25, math.sqrt(math.abs(roll))) * 30 * FrameTime())
 	angles.roll = angles.roll + roll
 	lerpfov = math.Approach(lerpfov or fov, fov, FrameTime() * 60)
 
@@ -922,13 +1002,13 @@ function GM:RenderScreenspaceEffects()
 		surface.DrawRect(0, 0, ScrW(), ScrH())
 	elseif curtime < starttime then
 		if curtime >= starttime - 1.5 then
-			local delta = math.min(starttime - (curtime - 0.5), 1)
+			local delta = math_min(starttime - (curtime - 0.5), 1)
 			if delta > 0 then
 				TRANSITIONS[self.CurrentTransition]:In(delta, ScrW(), ScrH())
 			end
 		end
 	elseif curtime < starttime + 1.5 then
-		local delta = 1 - math.min((curtime + 0.5) - starttime, 1)
+		local delta = 1 - math_min((curtime + 0.5) - starttime, 1)
 		if delta > 0 then
 			TRANSITIONS[self.CurrentTransition]:Out(delta, ScrW(), ScrH())
 		end
@@ -1053,18 +1133,18 @@ function GM:DrawMinimap()
 	end
 
 	pos = MinimapWorldToScreen(self:GetGoalCenter(TEAM_RED))
-	surface.DrawCircle(pos.x, pos.y, 8, team.GetColor(TEAM_RED))
+	self:DrawCircle(pos.x, pos.y, 8, team.GetColor(TEAM_RED))
 
 	pos = MinimapWorldToScreen(self:GetGoalCenter(TEAM_BLUE))
-	surface.DrawCircle(pos.x, pos.y, 8, team.GetColor(TEAM_BLUE))
+	self:DrawCircle(pos.x, pos.y, 8, team.GetColor(TEAM_BLUE))
 
 	local ball = self:GetBall()
 	local carrier = ball:GetCarrier()
 	pos = MinimapWorldToScreen(ball:GetPos())
 	if carrier:IsValid() then
-		surface.DrawCircle(pos.x, pos.y, 6 + math.sin(CurTime() * 5) * 4, team.GetColor(carrier:Team()))
+		self:DrawCircle(pos.x, pos.y, 6 + math.sin(CurTime() * 5) * 4, team.GetColor(carrier:Team()))
 	else
-		surface.DrawCircle(pos.x, pos.y, 6, color_white)
+		self:DrawCircle(pos.x, pos.y, 6, color_white)
 	end
 end
 
@@ -1099,7 +1179,7 @@ function GM:DrawCrosshair()
 	local on = true
 	for i=0, h, 8 do
 		if on then
-			surface.DrawRect(x, y - h / 2 + i, 2, math.min(8, h - i))
+			surface.DrawRect(x, y - h / 2 + i, 2, math_min(8, h - i))
 		end
 		on = not on
 	end
@@ -1158,23 +1238,23 @@ function GM:UpdateHUD_Alive( InRound )
 	local Bar = vgui.Create( "DHudBar" )
 	GAMEMODE:AddHUDItem( Bar, 2 )
 
-	local TeamIndicator = vgui.Create( "DHudUpdater" );
+	local TeamIndicator = vgui.Create( "DHudUpdater" )
 	TeamIndicator:SizeToContents()
 	TeamIndicator:SetValueFunction( function() return team.GetName( LocalPlayer():Team() ) end )
 	TeamIndicator:SetColorFunction( function() return team.GetColor( LocalPlayer():Team() )	end )
 	TeamIndicator:SetFont( "HudSelectionText" )
 	Bar:AddItem( TeamIndicator )
-		
-	local RoundNumber = vgui.Create( "DHudUpdater" );
+
+	local RoundNumber = vgui.Create( "DHudUpdater" )
 	RoundNumber:SizeToContents()
 	RoundNumber:SetValueFunction( function() return GetGlobalInt( "RoundNumber", 0 ) end )
 	RoundNumber:SetLabel( "ROUND" )
 	Bar:AddItem( RoundNumber )
-			
-	local RoundTimer = vgui.Create( "DHudCountdown" );
+
+	local RoundTimer = vgui.Create( "DHudCountdown" )
 	RoundTimer:SizeToContents()
-	RoundTimer:SetValueFunction( function() 
-		if ( GetGlobalFloat( "RoundStartTime", 0 ) > CurTime() ) then return GetGlobalFloat( "RoundStartTime", 0 )  end 
+	RoundTimer:SetValueFunction( function()
+		if ( GetGlobalFloat( "RoundStartTime", 0 ) > CurTime() ) then return GetGlobalFloat( "RoundStartTime", 0 )  end
 		return GAMEMODE:GetTimeLimit()
 	end )
 	RoundTimer:SetLabel( "TIME" )
@@ -1184,33 +1264,33 @@ end
 function GM:UpdateHUD_Observer( bWaitingToSpawn, InRound, ObserveMode, ObserveTarget )
 	local lbl = nil
 	local txt = nil
-	local col = Color( 255, 255, 255 );
+	local col = color_white
 
-	if ( IsValid( ObserveTarget ) && ObserveTarget:IsPlayer() && ObserveTarget != LocalPlayer() && ObserveMode != OBS_MODE_ROAMING ) then
+	if IsValid( ObserveTarget ) and ObserveTarget:IsPlayer() and ObserveTarget ~= LocalPlayer() and ObserveMode ~= OBS_MODE_ROAMING then
 		lbl = "SPECTATING"
 		txt = ObserveTarget:Nick()
-		col = team.GetColor( ObserveTarget:Team() );
+		col = team.GetColor( ObserveTarget:Team() )
 	end
-	
-	if ( ObserveMode == OBS_MODE_DEATHCAM || ObserveMode == OBS_MODE_FREEZECAM ) then
+
+	if ObserveMode == OBS_MODE_DEATHCAM or ObserveMode == OBS_MODE_FREEZECAM then
 		txt = "You were knocked out!"
 	end
-	
-	if ( txt ) then
-		local txtLabel = vgui.Create( "DHudElement" );
+
+	if txt then
+		local txtLabel = vgui.Create( "DHudElement" )
 		txtLabel:SetText( txt )
 		if ( lbl ) then txtLabel:SetLabel( lbl ) end
 		txtLabel:SetTextColor( col )
-		
-		GAMEMODE:AddHUDItem( txtLabel, 2 )		
+
+		GAMEMODE:AddHUDItem( txtLabel, 2 )
 	end
 
 	GAMEMODE:UpdateHUD_Dead( bWaitingToSpawn, InRound )
 end
 
 function GM:UpdateHUD_Dead( bWaitingToSpawn, InRound )
-	if !InRound then
-		local RespawnText = vgui.Create( "DHudElement" );
+	if not InRound then
+		local RespawnText = vgui.Create( "DHudElement" )
 			RespawnText:SizeToContents()
 			RespawnText:SetText( "Waiting for round start" )
 		GAMEMODE:AddHUDItem( RespawnText, 8 )
@@ -1219,7 +1299,7 @@ function GM:UpdateHUD_Dead( bWaitingToSpawn, InRound )
 	end
 
 	if ( bWaitingToSpawn ) then
-		local RespawnTimer = vgui.Create( "DHudCountdown" );
+		local RespawnTimer = vgui.Create( "DHudCountdown" )
 			RespawnTimer:SizeToContents()
 			RespawnTimer:SetValueFunction( function() return LocalPlayer():GetNWFloat( "RespawnTime", 0 ) end )
 			RespawnTimer:SetLabel( "SPAWN IN" )
@@ -1227,12 +1307,12 @@ function GM:UpdateHUD_Dead( bWaitingToSpawn, InRound )
 
 		return
 	end
-	
+
 	if ( InRound ) then
-		local RoundTimer = vgui.Create( "DHudCountdown" );
+		local RoundTimer = vgui.Create( "DHudCountdown" )
 			RoundTimer:SizeToContents()
-			RoundTimer:SetValueFunction( function() 
-				if ( GetGlobalFloat( "RoundStartTime", 0 ) > CurTime() ) then return GetGlobalFloat( "RoundStartTime", 0 )  end 
+			RoundTimer:SetValueFunction( function()
+				if ( GetGlobalFloat( "RoundStartTime", 0 ) > CurTime() ) then return GetGlobalFloat( "RoundStartTime", 0 )  end
 				return GAMEMODE:GetTimeLimit()
 			end )
 			RoundTimer:SetLabel( "TIME" )
@@ -1240,9 +1320,9 @@ function GM:UpdateHUD_Dead( bWaitingToSpawn, InRound )
 
 		return
 	end
-	
-	if Team != TEAM_SPECTATOR && !Alive then
-		local RespawnText = vgui.Create( "DHudElement" );
+
+	if Team ~= TEAM_SPECTATOR and not Alive then
+		local RespawnText = vgui.Create( "DHudElement" )
 			RespawnText:SizeToContents()
 			RespawnText:SetText( "Press Fire to Spawn" )
 		GAMEMODE:AddHUDItem( RespawnText, 8 )
@@ -1297,6 +1377,13 @@ end)
 
 net.Receive("eft_screencrack", function(length)
 	GAMEMODE:AddScreenCrack()
+end)
+
+net.Receive("eft_overtime", function(length)
+	GAMEMODE.RoundEndScrollOT = 0
+
+	-- TODO: less crappy sound
+	surface.PlaySound("ambient/machines/thumper_hit.wav")
 end)
 
 -- Temporary fix
