@@ -143,7 +143,7 @@ local math_Clamp = math.Clamp
 local math_floor = math.floor
 local math_random = math.random
 local pairs = pairs
-local game_GetTimeScale = game.GetTimeScale()
+local game_GetTimeScale = game.GetTimeScale
 
 function GM:InRound() return GetGlobalBool("InRound", true) end
 
