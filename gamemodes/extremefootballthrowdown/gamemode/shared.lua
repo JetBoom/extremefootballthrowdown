@@ -132,14 +132,27 @@ include("sh_obj_player_extend.lua")
 
 IncludePlayerClasses()
 
+local CurTime = CurTime
+local FrameTime = FrameTime
+local math_min = math.min
+local math_max = math.max
+local math_abs = math.abs
+local math_AngleDifference = math.AngleDifference
+local math_NormalizeAngle = math.NormalizeAngle
+local math_Clamp = math.Clamp
+local math_floor = math.floor
+local math_random = math.random
+local pairs = pairs
+local game_GetTimeScale = game.GetTimeScale()
+
 function GM:InRound() return GetGlobalBool("InRound", true) end
 
 function GM:EntityEmitSound(snd)
-	if game.GetTimeScale() ~= 1 then
+	if game_GetTimeScale() ~= 1 then
 		local ent = snd.Entity
 		if ent and ent:IsValid() then
 			if ent:IsPlayer() or ent:GetMoveType() ~= MOVETYPE_NONE then
-				snd.Pitch = math.Clamp(snd.Pitch * math.Clamp(game.GetTimeScale() ^ 0.6, 0.4, 3), 10, 255)
+				snd.Pitch = math_Clamp(snd.Pitch * math_Clamp(game_GetTimeScale() ^ 0.6, 0.4, 3), 10, 255)
 				snd.DSP = 21
 				return true
 			end
@@ -185,7 +198,7 @@ function GM:GetTimeLimit()
 			time = time + GAMEMODE.OvertimeTime
 
 			if GAMEMODE.OvertimeScoreBall > 0 and CurTime() < time + 120 then -- Just in case the map breaks, give 2 minutes max for someone to touch the score ball.
-				time = math.max(time, CurTime() + 0.1)
+				time = math_max(time, CurTime() + 0.1)
 			end
 		end
 
@@ -335,15 +348,19 @@ function GM:GetWeapons()
 end
 
 function GM:DefaultMove(pl, move)
+	--[[local time = UnPredictedCurTime()
+	local delta = time - (pl.LastMove or 0)
+	pl.LastMove = time]]
+
 	local carry = pl:GetCarry()
 	if carry:IsValid() and carry.Move and carry:Move(pl, move) then return end
 
 	if move:GetForwardSpeed() > 0 then
 		local curvel = move:GetVelocity()
 		local maxspeed = move:GetMaxSpeed()
-		local curspeed = math.min(maxspeed, curvel:Length2D())
+		local curspeed = math_min(maxspeed, curvel:Length2D())
 		local acceleration = carry:IsValid() and carry.GetAcceleration and carry:GetAcceleration() or 1
-		local newspeed = math.max(curspeed + FrameTime() * (15 + 0.5 * (400 - curspeed)) * acceleration, 100) * (1 - math.max(0, math.abs(math.AngleDifference(move:GetMoveAngles().yaw, curvel:Angle().yaw)) - 4) / 360)
+		local newspeed = math_max(curspeed + FrameTime()--[[delta]] * (15 + 0.5 * (400 - curspeed)) * acceleration, 100) * (1 - math_max(0, math_abs(math_AngleDifference(move:GetMoveAngles().yaw, curvel:Angle().yaw)) - 4) / 360)
 
 		move:SetSideSpeed(0)
 		move:SetMaxSpeed(newspeed)
@@ -445,12 +462,12 @@ function GM:OnPlayerHitGround(pl, inwater, hitfloater, speed)
 
 		if hitfloater then damage = damage / 2 end
 
-		if math.floor(damage) > 0 then
+		if math_floor(damage) > 0 then
 			if damage >= 20 then
 				pl:KnockDown()
 			end
 			pl:TakeSpecialDamage(damage, DMG_FALL, game.GetWorld(), game.GetWorld(), pl:GetPos())
-			pl:EmitSound("player/pl_fallpain"..(math.random(0, 1) == 1 and 3 or 1)..".wav")
+			pl:EmitSound("player/pl_fallpain"..(math_random(0, 1) == 1 and 3 or 1)..".wav")
 		end
 	end
 
@@ -478,23 +495,23 @@ function util.Blood(pos, amount, dir, force, noprediction)
 		effectdata:SetOrigin(pos)
 		effectdata:SetMagnitude(amount)
 		effectdata:SetNormal(dir)
-		effectdata:SetScale(math.max(128, force))
+		effectdata:SetScale(math_max(128, force))
 	util.Effect("bloodstream", effectdata, nil, noprediction)
 end
 
 function util.Chance(chance)
-	return chance <= math.random(100)
+	return chance <= math_random(100)
 end
 
 function util.Probability(prob)
-	return prob <= 1 or math.random(prob) == prob
+	return prob <= 1 or math_random(prob) == prob
 end
 
 function util.ToMinutesSeconds(seconds)
-	local minutes = math.floor(seconds / 60)
+	local minutes = math_floor(seconds / 60)
 	seconds = seconds - minutes * 60
 
-    return string.format("%02d:%02d", minutes, math.floor(seconds))
+    return string.format("%02d:%02d", minutes, math_floor(seconds))
 end
 
 function util.ExplosiveDamage(inflictor, attacker, pos, range, damage, damagetype, forcemultiplier, forceoverride)
@@ -507,7 +524,7 @@ function util.ExplosiveDamage(inflictor, attacker, pos, range, damage, damagetyp
 
 		local entpos = ent:NearestPoint(pos)
 		if util.IsVisible(entpos, pos) then
-			local dmg = math.Clamp(1 - entpos:Distance(pos) / range, 0, 1) ^ 0.5 * damage
+			local dmg = math_Clamp(1 - entpos:Distance(pos) / range, 0, 1) ^ 0.5 * damage
 			local force = (ent:IsPlayer() and 1 or 0.3) * (forceoverride or dmg * 15 * (forcemultiplier or 1))
 			ent:ThrowFromPosition(pos + Vector(0, 0, -24), force, force >= 150, attacker)
 			ent:TakeSpecialDamage(damage, damagetype, attacker, inflictor, pos)
@@ -529,12 +546,12 @@ function util.IsVisible(posa, posb)
 end
 
 function util.ToMinutesSecondsMilliseconds(seconds)
-	local minutes = math.floor(seconds / 60)
+	local minutes = math_floor(seconds / 60)
 	seconds = seconds - minutes * 60
 
-	local milliseconds = math.floor(seconds % 1 * 100)
+	local milliseconds = math_floor(seconds % 1 * 100)
 
-    return string.format("%02d:%02d.%02d", minutes, math.floor(seconds), milliseconds)
+    return string.format("%02d:%02d.%02d", minutes, math_floor(seconds), milliseconds)
 end
 
 function team.HasPlayers(teamid)
@@ -583,14 +600,14 @@ function util.LimitTurning(oldangles, newangles, angle_per_dt, dt)
 	local maxdiff = dt * angle_per_dt
 	local mindiff = -maxdiff
 
-	local diff = math.AngleDifference(newangles.yaw, oldangles.yaw)
+	local diff = math_AngleDifference(newangles.yaw, oldangles.yaw)
 	if diff > maxdiff or diff < mindiff then
-		newangles.yaw = math.NormalizeAngle(oldangles.yaw + math.Clamp(diff, mindiff, maxdiff))
+		newangles.yaw = math_NormalizeAngle(oldangles.yaw + math_Clamp(diff, mindiff, maxdiff))
 	end
 
-	diff = math.AngleDifference(newangles.pitch, oldangles.pitch)
+	diff = math_AngleDifference(newangles.pitch, oldangles.pitch)
 	if diff > maxdiff or diff < mindiff then
-		newangles.pitch = math.NormalizeAngle(oldangles.pitch + math.Clamp(diff, mindiff, maxdiff))
+		newangles.pitch = math_NormalizeAngle(oldangles.pitch + math_Clamp(diff, mindiff, maxdiff))
 	end
 
 	return newangles

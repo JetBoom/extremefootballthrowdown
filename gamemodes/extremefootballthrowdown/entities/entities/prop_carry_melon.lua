@@ -73,6 +73,7 @@ function ENT:Explode(hitpos, hitnormal, hitent)
 		ent:SetPos(self:GetPos())
 		ent:SetAngles(self:GetAngles())
 		ent:SetModel(self:GetModel())
+		ent:SetCollisionGroup(COLLISION_GROUP_DEBRIS)
 		ent:Spawn()
 
 		local phys = ent:GetPhysicsObject()

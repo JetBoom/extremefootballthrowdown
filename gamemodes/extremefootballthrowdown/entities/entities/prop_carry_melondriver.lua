@@ -81,7 +81,7 @@ function ENT:OnThink()
 			self:HitObject(nil, nil, self.TouchedEnemy)
 		end
 	end
-	
+
 	local carrier = self:GetCarrier()
 	if not carrier:IsValid() then return end
 

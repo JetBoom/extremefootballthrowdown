@@ -50,10 +50,10 @@ function STATE:Think(pl)
 		if hitent:IsPlayer() and hitent:GetChargeImmunity(pl) <= CurTime() and not hitent:ImmuneToAll() then
 			if hitent:CallStateFunction("OnChargedInto", pl) then
 				continue
-			elseif hitent:CanCharge() and math.abs(math.AngleDifference(hitent:GetAngles().yaw, (pl:GetPos() - hitent:GetPos()):Angle().yaw)) <= 25 and not hitent:IsCarrying() then
-				local myspeed = pl:GetVelocity():Length2D()
-				local otherspeed = hitent:GetVelocity():Length2D()
-				if math.abs(myspeed - otherspeed) < 24 then
+			elseif hitent:CanCharge() and math.abs(math.AngleDifference(hitent:GetAngles().yaw, (pl:GetPos() - hitent:GetPos()):Angle().yaw)) <= 25 then
+				local myspeed = pl:GetVelocity():LengthSqr()
+				local otherspeed = hitent:GetVelocity():LengthSqr()
+				if not hitent:IsCarrying() and math.abs(myspeed - otherspeed) < 576 then --24^2
 					pl:SetState(STATE_POWERSTRUGGLE, nil, hitent)
 					hitent:SetState(STATE_POWERSTRUGGLE, nil, pl)
 					return

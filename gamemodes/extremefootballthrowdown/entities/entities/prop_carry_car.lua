@@ -193,7 +193,7 @@ function ENT:OnThink()
 		self:HitObject(nil, nil, self.TouchedEnemy)
 	end
 
-	if not self.Exploded then
+	if not self.Exploded and not self:GetCarrier():IsValid() then
 		local pos = self:GetPos()
 		local oldpos = self.LastPos
 		if oldpos then

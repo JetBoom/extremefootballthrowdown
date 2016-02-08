@@ -13,6 +13,8 @@ function STATE:GetOpponent(pl)
 	if opp:IsValid() and opp:GetStateEntity() == pl and opp:GetState() == STATE_POWERSTRUGGLELOSE then
 		return opp
 	end
+
+	return NULL
 end
 
 function STATE:Started(pl, oldstate)
@@ -39,7 +41,7 @@ end
 
 function STATE:CreateMove(pl, cmd)
 	local opp = self:GetOpponent(pl)
-	if not opp then return end
+	if not opp:IsValid() then return end
 
 	local ang = cmd:GetViewAngles()
 	ang.yaw = (opp:GetPos() - pl:GetPos()):Angle().yaw
@@ -48,16 +50,13 @@ end
 
 function STATE:Think(pl)
 	local opp = self:GetOpponent(pl)
-	if not opp then
+	if not opp:IsValid() then
 		pl:EndState(true)
 	elseif opp:GetPos():Distance(pl:GetPos()) >= 128 then
 		opp:EndState(true)
 		pl:EndState(true)
 	elseif CurTime() >= pl:GetStateStart() + self.Time then
 		pl:ViewPunch(VectorRand():Angle() * (math.random(2) == 1 and -1 or 1) * 0.1)
-
-		pl:EndState()
-		opp:EndState()
 
 		if SERVER then
 			local plpos = pl:GetPos()
@@ -66,9 +65,15 @@ function STATE:Think(pl)
 			fang.pitch = 0
 			fang = fang:Forward()
 
-			for _, tr in pairs(pl:GetTargets()) do
-				local target = tr.Entity
-				if target:IsValid() and target:IsPlayer() and not target:ImmuneToAll() then
+			local victims = {opp}
+			for _, target in pairs(pl:GetTargets()) do
+				if target.Entity ~= opp then
+					victims[#victims + 1] = target.Entity
+				end
+			end
+
+			for _, target in pairs(victims) do
+				if target:IsValid() and target:IsPlayer() and (not target:ImmuneToAll() or target == opp) then
 					target:SetGravity(0.05)
 					timer.Simple(0.6, function() if target:IsValid() then target:SetGravity(1) end end)
 					target:SetGroundEntity(NULL)
@@ -91,6 +96,9 @@ function STATE:Think(pl)
 				effectdata:SetNormal(fang)
 			util.Effect("powerstrugglehit", effectdata, true, true)
 		end
+
+		pl:EndState()
+		--opp:EndState()
 	end
 end
 
