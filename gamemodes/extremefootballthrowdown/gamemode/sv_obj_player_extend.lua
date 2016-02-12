@@ -5,6 +5,14 @@ function meta:EndState(nocallended)
 	self:SetState(STATE_NONE, nil, nil, nocallended)
 end
 
+local IN_FORWARD = IN_FORWARD
+function meta:CanCharge()
+	return self:GetState() == STATE_NONE and self:GetStateInteger() == 0
+	and self:OnGround() and not self:Crouching() and self:WaterLevel() <= 1
+	and self:KeyDown(IN_FORWARD)
+	and self:GetVelocity():LengthSqr() >= 84100
+end
+
 function meta:FixModelAngles(velocity)
 	local eye = self:EyeAngles()
 	self:SetLocalAngles(eye)

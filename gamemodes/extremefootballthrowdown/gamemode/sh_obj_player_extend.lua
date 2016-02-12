@@ -146,14 +146,6 @@ function meta:CanMelee()
 	return self:IsIdle() and self:OnGround()
 end
 
-local IN_FORWARD = IN_FORWARD
-function meta:CanCharge()
-	return self:GetState() == STATE_NONE and self:GetStateInteger() == 0
-	and self:OnGround() and not self:Crouching() and self:WaterLevel() <= 1
-	and self:KeyDown(IN_FORWARD)
-	and self:GetVelocity():LengthSqr() >= 84100
-end
-
 function meta:CanDodge()
 	return self:IsIdle() and self:OnGround()
 end
