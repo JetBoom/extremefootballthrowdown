@@ -372,7 +372,7 @@ function GM:SpawnRandomWeaponAtSpawn(class, teamid, silent)
 end
 
 function GM:SpawnRandomWeapon(silent)
-	if #ents.FindByClass("logic_norandomweapons") > 0 or self.TieBreaker then return end
+	if self.VeryCompetitive or #ents.FindByClass("logic_norandomweapons") > 0 or self.TieBreaker then return end
 
 	local weps = self:GetWeapons()
 	if #weps == 0 then return end
@@ -385,7 +385,7 @@ function GM:SpawnRandomWeapon(silent)
 	for _, wepclass in pairs(weps) do
 		local tab = scripted_ents.GetStored(wepclass)
 		if tab then
-			if not overtime or tab.t.AllowDuringOverTime then
+			if (not overtime or tab.t.AllowDuringOverTime) and (not self.Competitive or tab.t.AllowInCompetitive) then
 				local currently_in_play = #ents.FindByClass(wepclass)
 				local max_in_play = tab.t.MaxActiveSets
 				if max_in_play == nil or currently_in_play < max_in_play * 2 then

@@ -14,6 +14,8 @@ ENT.BoneName = "ValveBiped.Bip01_R_Hand"
 ENT.AttachmentOffset = Vector(4, 8, 0)
 ENT.AttachmentAngles = Angle(90, 0, 90)
 
+ENT.AllowInCompetitive = true
+
 function ENT:SecondaryAttack(pl)
 	if pl:CanThrow() then
 		pl:SetState(STATE_THROW)

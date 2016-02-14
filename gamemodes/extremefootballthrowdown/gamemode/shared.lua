@@ -69,6 +69,16 @@ cvars.AddChangeCallback("eft_overtime_scoreball", function(cvar, oldvalue, newva
 	end
 end)
 
+local compcvar = CreateConVar("eft_competitive", "0", FCVAR_REPLICATED + FCVAR_ARCHIVE + FCVAR_NOTIFY, "Use competitive ruleset. 1 = competitive (whitelisted items), 2 = very competitive (no items)")
+GM.Competitive = compcvar:GetInt() >= 1
+GM.VeryCompetitive = compcvar:GetInt() >= 2
+cvars.AddChangeCallback("eft_competitive", function(cvar, oldvalue, newvalue)
+	newvalue = tonumber(newvalue) or 0
+
+	GAMEMODE.Competitive = newvalue >= 1
+	GAMEMODE.VeryCompetitive = newvalue >= 2
+end)
+
 GM.ScoreLimit = CreateConVar("eft_scorelimit", "7", FCVAR_REPLICATED + FCVAR_ARCHIVE + FCVAR_NOTIFY, "How many points to win."):GetInt()
 if GM.ScoreLimit < 0 then GM.ScoreLimit = -1 end
 cvars.AddChangeCallback("eft_scorelimit", function(cvar, oldvalue, newvalue)

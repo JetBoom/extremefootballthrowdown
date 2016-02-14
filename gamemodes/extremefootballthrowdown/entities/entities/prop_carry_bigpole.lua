@@ -17,6 +17,7 @@ ENT.AttachmentAngles = Angle(0, 0, 180)
 ENT.Mass = 150
 
 ENT.AllowDuringOverTime = true
+ENT.AllowInCompetitive = true
 
 function ENT:Initialize()
 	self.BaseClass.Initialize(self)
