@@ -6,7 +6,7 @@ local LocalPlayer = LocalPlayer
 function meta:CanCharge()
 	return self:GetState() == STATE_NONE and self:GetStateInteger() == 0
 	and self:OnGround() and not self:Crouching() and self:WaterLevel() <= 1
-	and (LocalPlayer() == self or self:KeyDown(IN_FORWARD))
+	and (LocalPlayer() ~= self or self:KeyDown(IN_FORWARD))
 	and self:GetVelocity():LengthSqr() >= 84100
 end
 
