@@ -35,6 +35,7 @@ function meta:GetStateEntity() return self:GetDTEntity(0) end
 function meta:GetStateVector() return self:GetDTVector(0) end
 function meta:GetStateAngles() return self:GetDTAngle(0) end
 function meta:GetStateBool() return self:GetDTBool(0) end
+function meta:GetStateBool2() return self:GetDTBool(1) end
 function meta:SetStateStart(time) self:SetDTFloat(0, time) end
 function meta:SetStateEnd(time) self:SetDTFloat(1, time) end
 function meta:SetStateNumber(num) self:SetDTFloat(2, num) end
@@ -43,6 +44,7 @@ function meta:SetStateEntity(ent) self:SetDTEntity(0, ent) end
 function meta:SetStateVector(vec) self:SetDTVector(0, vec) end
 function meta:SetStateAngles(ang) self:SetDTAngle(0, ang) end
 function meta:SetStateBool(bool) self:SetDTBool(0, bool) end
+function meta:SetStateBool2(bool) self:SetDTBool(1, bool) end
 
 local STATES = STATES
 function meta:CallStateFunction(name, ...)

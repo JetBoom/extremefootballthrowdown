@@ -11,6 +11,8 @@ include("cl_postprocess.lua")
 GM.LerpRateOn = 10
 GM.LerpRateOff = 8
 
+TEXT_ALIGN_TOP_REAL = TEXT_ALIGN_TOP
+TEXT_ALIGN_BOTTOM_REAL = TEXT_ALIGN_BOTTOM
 
 local OldHealth = 0
 local LastHealthLoss = 0
@@ -26,6 +28,8 @@ local STEPSOUNDTIME_WATER_KNEE = STEPSOUNDTIME_WATER_KNEE
 local TEXT_ALIGN_CENTER = TEXT_ALIGN_CENTER
 local TEXT_ALIGN_TOP = TEXT_ALIGN_TOP
 local TEXT_ALIGN_BOTTOM = TEXT_ALIGN_BOTTOM
+local TEXT_ALIGN_TOP_REAL = TEXT_ALIGN_TOP_REAL
+local TEXT_ALIGN_BOTTOM_REAL = TEXT_ALIGN_BOTTOM_REAL
 local TEXT_ALIGN_LEFT = TEXT_ALIGN_LEFT
 local TEXT_ALIGN_RIGHT = TEXT_ALIGN_RIGHT
 local ScrH = ScrH
@@ -565,11 +569,11 @@ function GM:Draw3DBallPowerup()
 	cam.Start3D2D(EyePos3D2DScreen(0, 400), camang, 1 + math.abs(math.sin(time * math.pi * 2)) ^ 4 * 0.25)
 
 		if statetable.Name then
-			draw.SimpleText(string.upper(statetable.Name), "eft_3dpoweruptext", 0, -2, col, TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
+			draw.SimpleText(string.upper(statetable.Name), "eft_3dpoweruptext", 0, -2, col, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM_REAL)
 		end
 		if timeleft ~= -1 then
 			col.r = 255 col.g = 255 col.b = 255
-			draw.SimpleText(util.ToMinutesSecondsMilliseconds(timeleft), "eft_3dpoweruptimetext", 0, 2, col, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM)
+			draw.SimpleText(util.ToMinutesSecondsMilliseconds(timeleft), "eft_3dpoweruptimetext", 0, 2, col, TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP_REAL)
 		end
 
 	cam.End3D2D()
@@ -605,8 +609,8 @@ function GM:Draw3DGameWinner()
 			draw.SimpleText("TIE", "eft_3dwinnertext", -16 - rfadein * 1000, 0, team.GetColor(TEAM_RED), TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
 			draw.SimpleText("GAME", "eft_3dwinnertext", 16 + rfadein * 1000, 0, team.GetColor(TEAM_BLUE), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 		else
-			draw.SimpleText("V I C T O R Y", "eft_3dwinnertext", 0, -16 - rfadein * 1000, Color(HSVtoRGB((time * 180) % 360)), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
-			draw.SimpleText(team.GetName(winner), "eft_3dwinnertext", 0, 16 + rfadein * 1000, team.GetColor(winner), TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM)
+			draw.SimpleText("V I C T O R Y", "eft_3dwinnertext", 0, -16 - rfadein * 1000, Color(HSVtoRGB((time * 180) % 360)), TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM)
+			draw.SimpleText(team.GetName(winner), "eft_3dwinnertext", 0, 16 + rfadein * 1000, team.GetColor(winner), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP_REAL)
 		end
 
 	cam.End3D2D()
@@ -644,7 +648,7 @@ function GM:Draw3DRoundWinner()
 	cam.IgnoreZ(true)
 	cam.Start3D2D(EyePos3D2DScreen(1200 - self.RoundEndScroll * 2400, 40), ang, size)
 
-		draw.SimpleText(self.RoundHomeRun and "HOME RUN!!" or "TOUCH DOWN!!", "eft_3dwinnertext", 0, 0, barcol, TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
+		draw.SimpleText(self.RoundHomeRun and "HOME RUN!!" or "TOUCH DOWN!!", "eft_3dwinnertext", 0, 0, barcol, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM)
 
 	cam.End3D2D()
 	cam.IgnoreZ(false)
@@ -732,7 +736,7 @@ function GM:Draw3DOvertime()
 	cam.IgnoreZ(true)
 	cam.Start3D2D(EyePos3D2DScreen(1200 - self.RoundEndScrollOT * 2400, 0), ang, size)
 
-		draw.SimpleText("OVER TIME!", "eft_3dwinnertext", 0, 0, barcol, TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
+		draw.SimpleText("OVER TIME!", "eft_3dwinnertext", 0, 0, barcol, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM)
 
 	cam.End3D2D()
 	cam.IgnoreZ(false)
@@ -752,9 +756,9 @@ function GM:Draw3DTeamScores()
 	cam.Start3D2D(EyePos3D2DScreen(-400, 450), camang, 1)
 		draw.RoundedBox(16, w * -0.5, 0, w, h, color_black_alpha90)
 		draw.SimpleText(team.GetName(TEAM_RED), "eft_3dteamname", 0, 8, team.GetColor(TEAM_RED), TEXT_ALIGN_CENTER)
-		draw.SimpleText(team.GetScore(TEAM_RED).." / "..self.ScoreLimit, "eft_3dteamscore", 0, h, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
+		draw.SimpleText(team.GetScore(TEAM_RED).." / "..self.ScoreLimit, "eft_3dteamscore", 0, h, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM_REAL)
 		if team.HasPity(TEAM_RED) then
-			draw.SimpleText("RAGE!", "eft_3dpity", 0, h + 8, Color(HSVtoRGB(math.abs(math.sin(CurTime() * 4)) * 50)), TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM)
+			draw.SimpleText("RAGE!", "eft_3dpity", 0, h + 8, Color(HSVtoRGB(math.abs(math.sin(CurTime() * 4)) * 50)), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP_REAL)
 		end
 
 	cam.End3D2D()
@@ -771,9 +775,9 @@ function GM:Draw3DTeamScores()
 
 		draw.RoundedBox(16, w * -0.5, 0, w, h, color_black_alpha90)
 		draw.SimpleText(team.GetName(TEAM_BLUE), "eft_3dteamname", 0, 8, team.GetColor(TEAM_BLUE), TEXT_ALIGN_CENTER)
-		draw.SimpleText(team.GetScore(TEAM_BLUE).." / "..self.ScoreLimit, "eft_3dteamscore", 0, h, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
+		draw.SimpleText(team.GetScore(TEAM_BLUE).." / "..self.ScoreLimit, "eft_3dteamscore", 0, h, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM_REAL)
 		if team.HasPity(TEAM_BLUE) then
-			draw.SimpleText("RAGE!", "eft_3dpity", 0, h + 8, Color(HSVtoRGB(math.abs(math.sin(CurTime() * 4)) * 50)), TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM)
+			draw.SimpleText("RAGE!", "eft_3dpity", 0, h + 8, Color(HSVtoRGB(math.abs(math.sin(CurTime() * 4)) * 50)), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP_REAL)
 		end
 
 	cam.End3D2D()
@@ -890,7 +894,7 @@ function GM:Draw3DBallIndicator()
 		if not carrier:IsValid() and autoreturn > 0 then
 			local delta = autoreturn - CurTime()
 			if delta <= 5 then
-				draw.SimpleText(string.ToMinutesSecondsMilliseconds(math_max(0, delta)), "eft_3dballtextsmall", 0, -42, col, TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
+				draw.SimpleText(string.ToMinutesSecondsMilliseconds(math_max(0, delta)), "eft_3dballtextsmall", 0, -42, col, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM_REAL)
 			end
 		end
 
