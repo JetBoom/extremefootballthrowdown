@@ -100,6 +100,39 @@ function STATE:ThinkCompensatable(pl)
 			end
 		end
 
+		if SERVER then
+			local ball = GAMEMODE:GetBall()
+			if not ball:GetCarrier():IsValid() then
+				local ballpos = ball:GetPos()
+				local eyepos = pl:EyePos()
+				if ballpos:Distance(eyepos) <= self.Range and util.IsVisible(ballpos, eyepos) then
+					local eyevector = pl:EyeAngles()
+					eyevector.pitch = 0
+					eyevector = eyevector:Forward()
+
+					local dir = ballpos - eyepos
+					dir:Normalize()
+					if eyevector:Dot(dir) >= 0.4 then
+						if CurTime() >= (NEXTHOMERUN or 0) then
+							NEXTHOMERUN = CurTime() + 5
+						end
+
+						ball.LastBeatingStickHit = pl
+						ball.LastBeatingStickHitTime = CurTime()
+						ball:SetLastCarrier(pl)
+						ball:SetAutoReturn(0)
+						ball:EmitSound("npc/zombie/zombie_hit.wav", 90, math.Rand(95, 105))
+						local phys = ball:GetPhysicsObject()
+						if phys:IsValid() then
+							local ang = dir:Angle()
+							ang.pitch = -35
+							phys:SetVelocityInstantaneous(ang:Forward() * 515)
+						end
+					end
+				end
+			end
+		end
+
 		if comp then
 			pl:LagCompensation(false)
 		end
