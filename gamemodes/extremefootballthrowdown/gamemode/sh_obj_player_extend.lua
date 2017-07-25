@@ -209,7 +209,7 @@ function meta:ShouldNotCollide(ent)
 		return E_IsValid(ent) and ent:IsPlayer()
 	end
 
-	return E_IsValid(ent) and ent:IsPlayer() and P_Team(ent) ~= P_Team(self)
+	return E_IsValid(ent) and ent:IsPlayer() and P_Team(ent) == P_Team(self)
 end
 
 local function InvalidateCompensatedTrace(tr, start, distance)
