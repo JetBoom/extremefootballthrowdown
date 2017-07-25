@@ -1,6 +1,8 @@
 STATE.Time = 0.9
 
 function STATE:Started(pl, oldstate)
+	pl:SetCollisionMode(COLLISION_PASSTHROUGH)
+
 	pl:Freeze(true)
 	pl:SetStateBool(math.random(2) == 1)
 end

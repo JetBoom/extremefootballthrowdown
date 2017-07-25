@@ -8,6 +8,8 @@ function STATE:Started(pl, oldstate)
 		if 1 <= pl:Health() and pl:Alive() then
 			pl:CreateRagdoll()
 		end
+
+		pl:SetCollisionMode(COLLISION_PASSTHROUGH)
 	end
 
 	pl:SetStateInteger(KD_STATE_NONE)
@@ -31,10 +33,14 @@ function STATE:Ended(pl, newstate)
 		if rag and rag:IsValid() then
 			rag:Remove()
 		end
+
+		pl:SetCollisionMode(COLLISION_AVOID)
 	end
 end
 
 function STATE:GoToNextState(pl)
+	if not pl:OnGround() then return end
+
 	local dir = vector_origin
 	if pl:KeyDown(IN_FORWARD) then
 		dir = dir + pl:GetForward()

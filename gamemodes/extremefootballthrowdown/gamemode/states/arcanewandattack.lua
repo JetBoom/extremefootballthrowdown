@@ -10,7 +10,7 @@ end
 
 if SERVER then
 function STATE:Ended(pl, newstate)
-	if newstate ~= STATE_NONE or not pl:GetCarry():IsValid() or pl:GetCarry():GetClass() ~= "prop_carry_arcanewand" then return end
+	if newstate ~= STATE_NONE or not pl:GetCarry():IsValid() or pl:GetCarry():GetClass() ~= "prop_carry_arcanewand" or pl:GetCarry().Canceled then return end
 
 	pl:EmitSound("weapons/physcannon/energy_sing_flyby"..math.random(2)..".wav")
 
@@ -68,5 +68,5 @@ function STATE:ShouldDrawCrosshair()
 end
 
 function STATE:GetCameraPos(pl, camerapos, origin, angles, fov, znear, zfar)
-	pl:ThirdPersonCamera(camerapos, origin, angles, fov, znear, zfar, math.Clamp((CurTime() - pl:GetStateStart()), 0, 1))
+	pl:ThirdPersonCamera(camerapos, origin, angles, fov, znear, zfar, math.Clamp((CurTime() - pl:GetStateStart()) * 4, 0, 1))
 end

@@ -29,6 +29,10 @@ end
 function ENT:SecondaryAttack(pl)
 	if pl:CanThrow() then
 		pl:SetState(STATE_THROW)
+	elseif pl:GetState() == STATE_ARCANEWANDATTACK then
+		self.Canceled = true
+		pl:EndState()
+		self.Canceled = nil
 	end
 
 	return true

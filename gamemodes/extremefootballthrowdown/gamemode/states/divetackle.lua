@@ -7,6 +7,7 @@ end
 
 function STATE:Started(pl, oldstate)
 	pl:Freeze(true)
+	pl:SetStateEntity(NULL)
 
 	local ang = pl:EyeAngles()
 	ang[1] = 0
@@ -23,6 +24,8 @@ function STATE:Started(pl, oldstate)
 			ent:SetPos(pl:GetPos() + pl:GetForward() * 24)
 			ent:Spawn()
 		end
+
+		pl:SetCollisionMode(COLLISION_PASSTHROUGH)
 	end
 end
 
@@ -36,27 +39,39 @@ function STATE:Ended(pl, newstate)
 			end
 		end
 	end
+
+	pl:SetStateEntity(NULL)
+end
+
+function STATE:CanPickup(pl, ent)
+	return ent == GAMEMODE.Ball and pl:GetStateEntity() == NULL
 end
 
 if SERVER then
 function STATE:Think(pl)
 	if pl:OnGround() then
-		for _, ent in pairs(ents.FindByClass("point_divetackletrigger")) do
-			if ent:GetOwner() == pl then
-				ent:ProcessTackles()
+		if pl:IsCarryingBall() then
+			pl:EndState()
+			pl:SetLocalVelocity(pl:GetVelocity() * 0.5)
+		else
+			for _, ent in pairs(ents.FindByClass("point_divetackletrigger")) do
+				if ent:GetOwner() == pl then
+					ent:ProcessTackles()
+					return
+				end
 			end
+		--[[else
+			local heading = pl:GetVelocity()
+			local speed = heading:Length()
+			if 200 <= speed then
+				heading:Normalize()
+				local startpos = pl:GetPos()
+				local tr = util.TraceHull({start = startpos, endpos = startpos + speed * FrameTime() * 2 * heading, mask = MASK_PLAYERSOLID, filter = pl:GetTraceFilter(), mins = pl:OBBMins(), maxs = pl:OBBMaxs()})
+				if tr.Hit and tr.HitNormal.z < 0.65 and 0 < tr.HitNormal:Length() and not (tr.Entity:IsValid() and tr.Entity:IsPlayer()) then
+					pl:KnockDown(3)
+				end
+			end]]
 		end
-	--[[else
-		local heading = pl:GetVelocity()
-		local speed = heading:Length()
-		if 200 <= speed then
-			heading:Normalize()
-			local startpos = pl:GetPos()
-			local tr = util.TraceHull({start = startpos, endpos = startpos + speed * FrameTime() * 2 * heading, mask = MASK_PLAYERSOLID, filter = pl:GetTraceFilter(), mins = pl:OBBMins(), maxs = pl:OBBMaxs()})
-			if tr.Hit and tr.HitNormal.z < 0.65 and 0 < tr.HitNormal:Length() and not (tr.Entity:IsValid() and tr.Entity:IsPlayer()) then
-				pl:KnockDown(3)
-			end
-		end]]
 	end
 end
 end

@@ -1,22 +1,19 @@
 local meta = FindMetaTable("Player")
 if not meta then return end
 
+local SPEED_CHARGE_SQR = SPEED_CHARGE_SQR
+local IN_FORWARD = IN_FORWARD
+
 function meta:EndState(nocallended)
 	self:SetState(STATE_NONE, nil, nil, nocallended)
 end
 
-local IN_FORWARD = IN_FORWARD
 function meta:CanCharge()
 	return self:GetState() == STATE_NONE and self:GetStateInteger() == 0
-	and self:OnGround() and not self:Crouching() and self:WaterLevel() <= 1
+	--[[and self:OnGround()]] and not self:Crouching() and self:WaterLevel() <= 1
 	and self:KeyDown(IN_FORWARD)
-	and self:GetVelocity():LengthSqr() >= 84100
-end
-
-function meta:FixModelAngles(velocity)
-	local eye = self:EyeAngles()
-	self:SetLocalAngles(eye)
-	self:SetPoseParameter("move_yaw", math.NormalizeAngle(velocity:Angle().yaw - eye.y))
+	and self:Alive() and self:GetObserverMode() == 0
+	and self:ChargingSpeedSqr() >= SPEED_CHARGE_SQR
 end
 
 function meta:RemoveAllStatus(bSilent, bInstant)
@@ -78,8 +75,16 @@ function meta:GiveStatus(sType, fDie)
 	end
 end
 
-function meta:KnockDown(time, knocker)
+function meta:KnockDown(time, knocker, from_throw)
 	if not self:Alive() or self:InVehicle() or self:GetState() == STATE_PREROUND then return end
+
+	if from_throw and knocker and knocker:IsValid() then
+		local knockdown = not self:IsImmuneToKnockdown(knocker)
+		if not knockdown then return false end
+
+		self:TriggerKnockdownImmunity(knocker)
+		self:IncrementKnockdownImmunityGlobal()
+	end
 
 	time = time or 2.75
 	self:SetState(STATE_KNOCKEDDOWN, time)
@@ -92,10 +97,13 @@ function meta:KnockDown(time, knocker)
 	if carry:IsValid() and carry.Drop then
 		carry:Drop()
 	end
+
+	return true
 end
 
-function meta:ResetKnockdownImmunity(pl, time)
-	self:SetKnockdownImmunity(pl, CurTime() + 3.75)
+function meta:TriggerKnockdownImmunity(pl, time)
+	self:SetKnockdownImmunity(pl, CurTime() + (time or 3.75))
+	self:IncrementKnockdownImmunityGlobal()
 end
 
 function meta:SetKnockdownImmunity(pl, time)
@@ -104,6 +112,24 @@ end
 
 function meta:GetKnockdownImmunity(pl)
 	return self.m_KnockdownImmunity[pl] or 0
+end
+
+function meta:IsImmuneToKnockdown(pl)
+	return pl and CurTime() < (self.m_KnockdownImmunity[pl] or 0) or CurTime() < self.m_KnockdownImmunityGlobal
+end
+
+function meta:TriggerKnockdownImmunityGlobal(time)
+	self.m_KnockdownImmunityGlobal = CurTime() + (time or 3.75)
+	self.m_KnockdownImmunityChain = 0
+end
+
+function meta:IncrementKnockdownImmunityGlobal()
+	local curtime = CurTime()
+
+	self.m_KnockdownImmunityChain = math.max(curtime, self.m_KnockdownImmunityChain) + 1.0
+	if self.m_KnockdownImmunityChain >= curtime + 2.25 then
+		self:TriggerKnockdownImmunityGlobal()
+	end
 end
 
 function meta:ResetChargeImmunity(pl, time)
@@ -135,11 +161,12 @@ function meta:ChargeHit(hitent, tr)
 
 	self:SetLastChargeHit(CurTime())
 
-	local knockdown = CurTime() >= hitent:GetKnockdownImmunity(self)
+	local knockdown = not hitent:IsImmuneToKnockdown(self)
 	self:ChargeLaunch(hitent, knockdown)
 	hitent:ResetChargeImmunity(self)
 	if knockdown then
-		hitent:ResetKnockdownImmunity(self)
+		hitent:TriggerKnockdownImmunity(self)
+		hitent:IncrementKnockdownImmunityGlobal()
 	end
 	hitent:TakeDamage(5, self)
 
@@ -160,10 +187,11 @@ end
 function meta:PunchHit(hitent, tr)
 	if hitent:ImmuneToAll() then return end
 
-	local knockdown = CurTime() >= hitent:GetKnockdownImmunity(self)
+	local knockdown = not hitent:IsImmuneToKnockdown(self)
 	hitent:ThrowFromPosition(self:GetLaunchPos(), 360, knockdown, self)
 	if knockdown then
-		hitent:ResetKnockdownImmunity(self)
+		hitent:TriggerKnockdownImmunity(self)
+		hitent:IncrementKnockdownImmunityGlobal()
 	end
 	hitent:TakeDamage(10, self)
 

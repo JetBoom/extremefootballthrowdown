@@ -292,6 +292,8 @@ function STATE:ImmuneToAll(pl)
 end
 
 function STATE:Started(pl, oldstate)
+	pl:SetCollisionMode(COLLISION_PASSTHROUGH)
+
 	pl:SetStateNumber(0.5)
 	pl:SetStateInteger(0)
 	pl:ResetJumpPower(0)

@@ -31,7 +31,7 @@ function ENT:Touch(ent)
 
 		util.Blood(ent:NearestPoint(self:GetPos()), math.random(40, 60), Vector(0, 0, 1), 250)
 		ent:EmitSound("ambient/machines/slicer"..math.random(4)..".wav")
-		ent:ThrowFromPosition((parent:GetPos() + (ent:GetPos() + Vector(0, 0, -16)) * 2) / 3, 400, true)
+		ent:ThrowFromPosition((parent:GetPos() + (ent:GetPos() + Vector(0, 0, -16)) * 2) / 3, 400, true, parent:GetPlayer())
 		ent:TakeDamage(18, parent:GetPlayer(), parent)
 	end
 end

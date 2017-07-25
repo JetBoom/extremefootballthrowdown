@@ -31,7 +31,7 @@ function ENT:Touch(ent)
 	if self:GetEnabled() then
 		if ent:IsPlayer() and ent:Alive() and ent:IsCarrying() and ent:GetCarry() == GAMEMODE:GetBall() then ent = GAMEMODE:GetBall() end
 
-		if ent == GAMEMODE:GetBall() then
+		if ent == GAMEMODE:GetBall() and ent:GetState() ~= BALL_STATE_SCOREBALL then
 			local desstate = _G["BALL_STATE_"..string.upper(self.m_Powerup)] or 0
 			if ent:GetState() ~= desstate then
 				ent:SetState(desstate, self.m_PowerupTime)

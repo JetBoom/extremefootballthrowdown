@@ -1,10 +1,10 @@
-if SERVER then
+--[[if SERVER then
 	include("animationsapi/boneanimlib.lua")
 end
 
 if CLIENT then
 	include("animationsapi/cl_boneanimlib.lua")
-end
+end]]
 
 local ACT_MP_STAND_IDLE = ACT_MP_STAND_IDLE
 local ACT_HL2MP_SWIM_SLAM = ACT_HL2MP_SWIM_SLAM
@@ -15,6 +15,8 @@ local ACT_MP_RUN = ACT_MP_RUN
 local ACT_HL2MP_IDLE_MELEE_ANGRY = ACT_HL2MP_IDLE_MELEE_ANGRY
 local ACT_HL2MP_IDLE_ANGRY = ACT_HL2MP_IDLE_ANGRY
 local ACT_HL2MP_RUN_FAST = ACT_HL2MP_RUN_FAST
+local SPEED_CHARGE_SQR = SPEED_CHARGE_SQR
+local SPEED_RUN_SQR = SPEED_RUN_SQR
 
 function GM:HandlePlayerSwimming(pl, velocity)
 	if not pl:IsSwimming() then return false end
@@ -36,9 +38,9 @@ function GM:CalcMainActivity(pl, velocity)
 
 	if not ( self:HandlePlayerJumping( pl, velocity ) or self:HandlePlayerDucking( pl, velocity ) or self:HandlePlayerSwimming( pl, velocity ) ) then
 		local len2d = velocity:LengthSqr()
-		if len2d >= 84100 then --290^2
+		if len2d >= SPEED_CHARGE_SQR then
 			pl.CalcIdeal = ACT_HL2MP_RUN_FAST
-		elseif len2d >= 22500 then --150^2
+		elseif len2d >= SPEED_RUN_SQR then
 			pl.CalcIdeal = ACT_MP_RUN
 		elseif len2d >= 1 then
 			pl.CalcIdeal = pl:IsCarrying() and ACT_HL2MP_WALK_SUITCASE or ACT_MP_WALK
@@ -53,11 +55,15 @@ function GM:CalcMainActivity(pl, velocity)
 		pl:CallCarryFunction("CalcMainActivity", velocity)
 	end
 
+	if not pl:CallStateFunction("TranslateActivity") then
+		pl:CallCarryFunction("TranslateActivity")
+	end
+
 	return pl.CalcIdeal, pl.CalcSeqOverride
 end
 
 function GM:DoAnimationEvent(pl, event, data)
-	return pl:CallStateFunction("DoAnimationEvent", event, data) or pl:CallCarryFunction("DoAnimationEvent", event, data) or self.BaseClass.DoAnimationEvent(self, pl, event, data)
+	return pl:CallCarryFunction("DoAnimationEvent", event, data) or pl:CallStateFunction("DoAnimationEvent", event, data) or self.BaseClass.DoAnimationEvent(self, pl, event, data)
 end
 
 function GM:UpdateAnimation(pl, velocity, maxseqgroundspeed)

@@ -1,6 +1,6 @@
-STATE.Time = 1
+STATE.Time = 1.0
 STATE.HitTime = 0.6
-STATE.Range = 128
+STATE.Range = 120
 STATE.FOV = 140
 
 function STATE:Started(pl, oldstate)
@@ -14,10 +14,7 @@ function STATE:IsIdle(pl)
 end
 
 function STATE:Move(pl, move)
-	move:SetSideSpeed(0)
-	move:SetForwardSpeed(0)
-	move:SetMaxSpeed(0)
-	move:SetMaxClientSpeed(0)
+	move:SetMaxClientSpeed(SPEED_ATTACK)
 
 	return MOVE_STOP
 end
@@ -58,15 +55,10 @@ function STATE:OnHitWithArcaneBolt(pl, ent)
 end
 
 function STATE:HitEntity(pl, hitent, tr)
-	local knockdown = CurTime() >= hitent:GetKnockdownImmunity(self)
-	hitent:ThrowFromPosition(pl:GetLaunchPos(), 800, knockdown, pl)
-	if knockdown then
-		hitent:ResetKnockdownImmunity(self)
-	end
-	if pl:GetState() ~= STATE_SPINNYKNOCKDOWN and pl:GetState() ~= STATE_KNOCKDOWN then
+	if hitent:ThrowFromPosition(pl:GetLaunchPos(), 800, true, pl) then
 		hitent:SetState(STATE_SPINNYKNOCKDOWN, STATES[STATE_SPINNYKNOCKDOWN].Time)
 	end
-	hitent:TakeDamage(25, pl)
+	hitent:TakeDamage(20, pl)
 
 	pl:ViewPunch(VectorRand():Angle() * (math.random(2) == 1 and -1 or 1) * 0.1)
 
@@ -78,28 +70,23 @@ function STATE:HitEntity(pl, hitent, tr)
 end
 
 function STATE:ThinkCompensatable(pl)
-	if not (pl:IsOnGround() and pl:WaterLevel() < 2) then
+	if not pl:IsOnGround() and not pl:IsSwimming() then
 		pl:EndState(true)
-	elseif SERVER and not pl:GetStateBool() and CurTime() >= pl:GetStateStart() + self.HitTime then
+	elseif not pl:GetStateBool() and CurTime() >= pl:GetStateStart() + self.HitTime then
 		pl:SetStateBool(true)
+		pl:DoAttackEvent()
+
 		if SERVER then
 			pl:EmitSound("eft/bigpole_swing.ogg", 75, math.random(97, 103))
-		end
 
-		local comp = pl:ShouldCompensate()
-
-		if comp then
-			pl:LagCompensation(true)
-		end
-
-		for _, tr in ipairs(pl:GetSweepTargets(self.Range, self.FOV, nil, nil, true)) do
-			local hitent = tr.Entity
-			if hitent:IsPlayer() and not hitent:ImmuneToAll() then
-				self:HitEntity(pl, hitent, tr)
+			local targets = pl:GetSweepTargets(self.Range, self.FOV, nil, nil, true, true)
+			for _, tr in ipairs(targets) do
+				local hitent = tr.Entity
+				if hitent:IsPlayer() and not hitent:ImmuneToAll() then
+					self:HitEntity(pl, hitent, tr)
+				end
 			end
-		end
 
-		if SERVER then
 			local ball = GAMEMODE:GetBall()
 			if not ball:GetCarrier():IsValid() then
 				local ballpos = ball:GetPos()
@@ -132,14 +119,10 @@ function STATE:ThinkCompensatable(pl)
 				end
 			end
 		end
-
-		if comp then
-			pl:LagCompensation(false)
-		end
 	end
 end
 
-function STATE:CalcMainActivity(pl, velocity)
+--[[function STATE:CalcMainActivity(pl, velocity)
 	pl.CalcSeqOverride = pl:LookupSequence("seq_baton_swing")
 	return true
 end
@@ -149,4 +132,4 @@ function STATE:UpdateAnimation(pl, velocity, maxseqgroundspeed)
 	pl:SetPlaybackRate(0)
 
 	return true
-end
+end]]

@@ -5,6 +5,8 @@ function STATE:Started(pl, oldstate)
 
 	if SERVER then
 		pl:CreateRagdoll()
+
+		pl:SetCollisionMode(COLLISION_PASSTHROUGH)
 	end
 end
 

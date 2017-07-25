@@ -1,3 +1,8 @@
+local ACT_HL2MP_RUN_CHARGING = ACT_HL2MP_RUN_CHARGING
+local IN_RELOAD = IN_RELOAD
+local math_AngleDifference = math.AngleDifference
+local pairs = pairs
+
 function STATE:IsIdle(pl)
 	return true
 end
@@ -28,11 +33,43 @@ function STATE:HighJumpThink(pl)
 	end
 end
 
+function STATE:DoAnimationEvent(pl, event, data)
+	if event == PLAYERANIMEVENT_ATTACK_PRIMARY then
+		pl:AnimRestartGesture(GESTURE_SLOT_ATTACK_AND_RELOAD, ACT_GMOD_GESTURE_MELEE_SHOVE_1HAND, true)
+		return ACT_INVALID
+	end
+end
+
 if SERVER then
+
+local M_Entity = FindMetaTable("Entity")
+local M_Player = FindMetaTable("Player")
+
+local COLLISION_PASSTHROUGH = COLLISION_PASSTHROUGH
+local COLLISION_NORMAL = COLLISION_NORMAL
+local P_Team = M_Player.Team
+local P_Alive = M_Player.Alive
+local E_IsValid = M_Entity.IsValid
+
 function STATE:Think(pl)
 	self:HighJumpThink(pl)
 
-	if not pl:CanCharge() then return end
+	if not pl:CanCharge() then
+		if pl:GetCollisionMode() > COLLISION_NORMAL then
+			local myteam = P_Team(pl)
+			for _, ent in pairs(ents.FindInBox(pl:WorldSpaceAABB())) do
+				if E_IsValid(ent) and ent:IsPlayer() and P_Alive(ent) and P_Team(ent) ~= myteam then
+					return
+				end
+			end
+
+			pl:SetCollisionMode(COLLISION_NORMAL)
+		end
+
+		return
+	end
+
+	pl:MaxCollisionMode(COLLISION_PASSTHROUGH)
 
 	--[[local comp = pl:ShouldCompensate()
 	if comp then
@@ -44,29 +81,70 @@ function STATE:Think(pl)
 	end]]
 
 	for _, tr in pairs(targets) do
+		-- Hitting someone might have changed our ability to charge any more.
 		if not pl:CanCharge() then return end
 
 		local hitent = tr.Entity
 		if hitent:IsPlayer() and hitent:GetChargeImmunity(pl) <= CurTime() and not hitent:ImmuneToAll() then
+			-- Let victim state handle it.
 			if hitent:CallStateFunction("OnChargedInto", pl) then
 				continue
-			elseif hitent:CanCharge() and math.abs(math.AngleDifference(hitent:GetAngles().yaw, (pl:GetPos() - hitent:GetPos()):Angle().yaw)) <= 25 then
-				local myspeed = pl:GetVelocity():LengthSqr()
-				local otherspeed = hitent:GetVelocity():LengthSqr()
-				if not hitent:IsCarrying() and math.abs(myspeed - otherspeed) < 576 then --24^2
+			end
+
+			-- Victim charging in to us at the same time.
+			if hitent:CanCharge() and math.abs(math_AngleDifference(hitent:GetAngles().yaw, (pl:GetPos() - hitent:GetPos()):Angle().yaw)) <= 25 then
+				local myspeed = pl:GetVelocity():Length2D()
+				local otherspeed = hitent:GetVelocity():Length2D()
+				local myground = pl:OnGround()
+				local otherground = hitent:OnGround() and not hitent:IsCarrying()
+				local closespeed = math.abs(myspeed - otherspeed) < 24
+
+				-- People on the ground always have priority. We're gonna get hit.
+				if otherground and not myground then
+					hitent:ChargeHit(pl, tr)
+					continue
+				end
+
+				-- Same thing here.
+				if myground and not otherground then
+					pl:ChargeHit(hitent, tr)
+					continue
+				end
+
+				-- Both in the air, hit each other regardless of speed.
+				if not myground and not otherground then
+					local mid = (hitent:GetPos() + pl:GetPos()) / 2
+
+					hitent:ChargeHit(pl, tr)
+					pl:ChargeHit(hitent, tr)
+
+					hitent:SetLocalVelocity(vector_origin)
+					pl:SetLocalVelocity(vector_origin)
+
+					hitent:ThrowFromPosition(mid, myspeed, false, pl)
+					pl:ThrowFromPosition(mid, otherspeed, false, pl)
+
+					continue
+				end
+
+				-- Both on the ground, similar speed.
+				if myground and otherground and closespeed then
 					pl:SetState(STATE_POWERSTRUGGLE, nil, hitent)
 					hitent:SetState(STATE_POWERSTRUGGLE, nil, pl)
 					return
-				else
-					pl:PrintMessage(HUD_PRINTTALK, "HEAD ON! - My speed: "..myspeed.." Their speed: "..otherspeed)
-					hitent:PrintMessage(HUD_PRINTTALK, "HEAD ON! - My speed: "..otherspeed.." Their speed: "..myspeed)
-					if myspeed < otherspeed then
-						hitent:ChargeHit(pl, tr)
-						continue
-					end
+				end
+
+				--[[pl:PrintMessage(HUD_PRINTTALK, "HEAD ON! - My speed: "..myspeed.." Their speed: "..otherspeed)
+				hitent:PrintMessage(HUD_PRINTTALK, "HEAD ON! - My speed: "..otherspeed.." Their speed: "..myspeed)]]
+
+				-- Punish us if our speed is less.
+				if myspeed < otherspeed then
+					hitent:ChargeHit(pl, tr)
+					continue
 				end
 			end
 
+			-- Default, just hit the target person.
 			pl:ChargeHit(hitent, tr)
 		end
 	end

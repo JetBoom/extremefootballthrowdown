@@ -3,18 +3,13 @@ if not meta then return end
 
 local IN_FORWARD = IN_FORWARD
 local LocalPlayer = LocalPlayer
+local SPEED_CHARGE_SQR = SPEED_CHARGE_SQR
+
 function meta:CanCharge()
 	return self:GetState() == STATE_NONE and self:GetStateInteger() == 0
-	and self:OnGround() and not self:Crouching() and self:WaterLevel() <= 1
+	--[[and self:OnGround()]] and not self:Crouching() and self:WaterLevel() <= 1
 	and (LocalPlayer() ~= self or self:KeyDown(IN_FORWARD))
-	and self:GetVelocity():LengthSqr() >= 84100
-end
-
-function meta:FixModelAngles(velocity)
-	local eye = self:EyeAngles()
-	self:SetLocalAngles(eye)
-	self:SetRenderAngles(eye)
-	self:SetPoseParameter("move_yaw", math.NormalizeAngle(velocity:Angle().yaw - eye.y))
+	and self:ChargingSpeedSqr() >= SPEED_CHARGE_SQR
 end
 
 function meta:GetStatus(sType)

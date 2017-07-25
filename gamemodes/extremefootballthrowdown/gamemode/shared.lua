@@ -30,8 +30,8 @@ GM.CanOnlySpectateOwnTeam = true
 
 GM.SelectClass = false
 
-GM.SecondsBetweenTeamSwitches = 40
-GM.SecondsBetweenTeamSwitchesFromSpec = 150
+GM.SecondsBetweenTeamSwitches = 20
+GM.SecondsBetweenTeamSwitchesFromSpec = 40
 
 GM.GameLength = CreateConVar("eft_gamelength", "20", FCVAR_REPLICATED + FCVAR_ARCHIVE + FCVAR_NOTIFY, "Time in minutes the map lasts for."):GetInt()
 if GM.GameLength < 0 then GM.GameLength = -1 end
@@ -155,6 +155,20 @@ local math_random = math.random
 local pairs = pairs
 local game_GetTimeScale = game.GetTimeScale
 
+local M_Entity = FindMetaTable("Entity")
+local M_Player = FindMetaTable("Player")
+local M_CMoveData = FindMetaTable("CMoveData")
+
+local COLLISION_AVOID = COLLISION_AVOID
+local P_Team = M_Player.Team
+local P_Alive = M_Player.Alive
+local P_GetCollisionMode = M_Player.GetCollisionMode
+local E_GetTable = M_Entity.GetTable
+local E_IsValid = M_Entity.IsValid
+local E_GetPos = M_Entity.GetPos
+local M_SetVelocity = M_CMoveData.SetVelocity
+local M_GetVelocity = M_CMoveData.GetVelocity
+
 function GM:InRound() return GetGlobalBool("InRound", true) end
 
 function GM:EntityEmitSound(snd)
@@ -188,6 +202,10 @@ function GM:ShouldCollide(enta, entb)
 	end
 
 	return true
+end
+
+function GM:IsCompetitive()
+	return cvars.Bool("eft_competitive")
 end
 
 function GM:GetOvertime()
@@ -316,7 +334,10 @@ function GM:Move(pl, move)
 		if ret == MOVE_OVERRIDE then return true end
 	end
 
-	if pl:OnGround() then
+	if pl:IsSwimming() then
+		--move:SetMaxSpeed(move:GetMaxSpeed() * 0.75)
+		move:SetMaxClientSpeed(move:GetMaxClientSpeed() * 0.666)
+	elseif pl:OnGround() then
 		local carry = pl:GetCarry()
 		if carry:IsValid() and carry == self:GetBall() then
 			if not carry:CallStateFunction("PreMove", pl, move) then
@@ -326,17 +347,51 @@ function GM:Move(pl, move)
 		else
 			self:DefaultMove(pl, move)
 		end
-	elseif pl:IsSwimming() then
-		move:SetMaxSpeed(move:GetMaxSpeed() * 0.75)
-		move:SetMaxClientSpeed(move:GetMaxClientSpeed() * 0.75)
 	else
-		move:SetMaxSpeed(move:GetMaxSpeed() * 0.2)
+		--move:SetMaxSpeed(move:GetMaxSpeed() * 0.2)
 		move:SetMaxClientSpeed(move:GetMaxClientSpeed() * 0.2)
 	end
 
 	ret = pl:CallStateFunction("PostMove", move)
 	if ret then
 		if ret == MOVE_OVERRIDE then return true end
+	end
+end
+
+local pt, vel, mode, avoid, trig
+function GM:FinishMove(pl, move)
+	pt = E_GetTable(pl)
+
+	-- Simple anti bunny hopping. Flag is set in OnPlayerHitGround
+	if pt.LandSlow then
+		pt.LandSlow = false
+
+		vel = M_GetVelocity(move)
+		vel.x = vel.x * 0.85
+		vel.y = vel.y * 0.85
+		M_SetVelocity(move, vel)
+	end
+
+	mode = P_GetCollisionMode(pl)
+	if mode == COLLISION_AVOID and pl:OnGround() then
+		myteam = P_Team(pl)
+
+		mypos = E_GetPos(pl)
+		avoid = Vector(0, 0, 0)
+		trig = false
+
+		for _, ent in pairs(ents.FindInBox(pl:WorldSpaceAABB())) do
+			if E_IsValid(ent) and ent:IsPlayer() and P_Alive(ent) and P_Team(ent) ~= myteam and ent:OnGround() then
+				avoid = avoid + (mypos - E_GetPos(ent))
+				trig = true
+			end
+		end
+
+		if trig then
+			avoid:Normalize()
+			avoid = FrameTime() * 128 * avoid
+			M_SetVelocity(move, M_GetVelocity(move) + avoid)
+		end
 	end
 end
 
@@ -373,11 +428,17 @@ function GM:DefaultMove(pl, move)
 		local newspeed = math_max(curspeed + FrameTime()--[[delta]] * (15 + 0.5 * (400 - curspeed)) * acceleration, 100) * (1 - math_max(0, math_abs(math_AngleDifference(move:GetMoveAngles().yaw, curvel:Angle().yaw)) - 4) / 360)
 
 		move:SetSideSpeed(0)
-		move:SetMaxSpeed(newspeed)
+		--move:SetMaxSpeed(newspeed)
 		move:SetMaxClientSpeed(newspeed)
 	else
-		move:SetMaxSpeed(120)
-		move:SetMaxClientSpeed(120)
+		--move:SetMaxSpeed(SPEED_STRAFE)
+		move:SetMaxClientSpeed(SPEED_STRAFE)
+	end
+end
+
+function GM:PrecacheResources()
+	for mdl in pairs(self.AllowedPlayerModels) do
+		util.PrecacheModel(mdl)
 	end
 end
 
@@ -466,6 +527,10 @@ function GM:OnPlayerHitGround(pl, inwater, hitfloater, speed)
 	end
 
 	if inwater then return true end
+
+	if speed > 64 then
+		pl.LandSlow = true
+	end
 
 	if SERVER then
 		local damage = (0.1 * (speed - 650)) ^ 1.2

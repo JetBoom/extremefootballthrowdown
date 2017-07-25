@@ -49,7 +49,7 @@ function meta:ThrowFromPosition(pos, force, knockdown, attacker)
 		self:SetGroundEntity(NULL)
 		self:SetVelocity(force * (self:LocalToWorld(self:OBBCenter()) - pos):GetNormalized())
 		if knockdown and self.KnockDown then
-			self:KnockDown(nil, attacker)
+			return self:KnockDown(nil, attacker, true)
 		end
 	end
 end

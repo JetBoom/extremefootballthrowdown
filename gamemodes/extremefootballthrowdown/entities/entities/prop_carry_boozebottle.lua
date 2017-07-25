@@ -93,7 +93,7 @@ function ENT:Explode(hitpos, hitnormal, hitent)
 
 	if IsValid(hitent) and hitent:IsPlayer() and hitent:Team() ~= self:GetLastCarrierTeam() then
 		hitent:EmitSound("physics/body/body_medium_impact_hard"..math.random(6)..".wav")
-		hitent:ThrowFromPosition(hitpos + Vector(0, 0, -24), math.Clamp(self:GetVelocity():Length() * 0.6, 250, 550), true)
+		hitent:ThrowFromPosition(hitpos + Vector(0, 0, -24), math.Clamp(self:GetVelocity():Length() * 0.6, 250, 550), true, self:GetLastCarrier())
 		hitent:TakeDamage(10, self:GetLastCarrier(), self)
 	end
 

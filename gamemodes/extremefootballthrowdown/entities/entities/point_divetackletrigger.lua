@@ -22,7 +22,7 @@ end
 
 function ENT:StartTouch(hitent)
 	local pl = self:GetOwner()
-	if not pl:IsValid() then return end
+	if not pl:IsValid() or pl:IsCarryingBall() then return end
 
 	if hitent:IsPlayer() and hitent:GetChargeImmunity(pl) <= CurTime() and not hitent:ImmuneToAll() and hitent:Team() ~= pl:Team() and hitent:Alive() and not (self.Hit:IsValid() and self.Hit:Alive()) then
 		if hitent:CallStateFunction("OnChargedInto", pl) then
@@ -59,11 +59,11 @@ function ENT:StartTouch(hitent)
 			self.Hit = hitent --self.Hit[hitent] = true
 			--pl:ChargeHit(hitent)
 			--if hitent:Alive() then
-				hitent:TemporaryNoCollide()
 				pl:ChargeLaunch(hitent, true)
 				hitent:SetLastAttacker(pl)
 				hitent:SetStateInteger(KD_STATE_DIVETACKLED)
 				hitent:SetStateEntity(pl)
+				pl:SetStateEntity(hitent)
 			--end
 		end
 	end
@@ -72,6 +72,12 @@ end
 function ENT:ProcessTackles()
 	local owner = self:GetOwner()
 	if not owner:IsValid() then return end
+
+	if not owner:Alive() then
+		--self:Remove()
+		owner:EndState()
+		return
+	end
 
 	local procd = self.DidChargeHit
 	local ent = self.Hit
@@ -82,7 +88,7 @@ function ENT:ProcessTackles()
 		ent:TakeSpecialDamage(10, DMG_FALL, owner, owner, owner:GetPos())
 		ent:EmitSound("player/pl_fallpain"..(math.random(2) == 1 and "3" or "1")..".wav")
 		ent:SetChargeImmunity(owner, CurTime() + 4)
-		ent:SetKnockdownImmunity(owner, CurTime() + 4)
+		ent:TriggerKnockdownImmunity(owner)
 		ent:SetDiveTackleThrowAwayTime(CurTime() + 4)
 	end
 
@@ -93,6 +99,16 @@ function ENT:ProcessTackles()
 		owner:TakeSpecialDamage(10, DMG_FALL, game.GetWorld(), game.GetWorld(), owner:GetPos())
 		owner:EmitSound("player/pl_fallpain"..(math.random(2) == 1 and "3" or "1")..".wav")
 	end
+end
+
+function ENT:Think()
+	local pl = self:GetOwner()
+	if not pl:IsValid() or not pl:Alive() or pl:GetObserverMode() ~= 0 or pl:GetState() ~= STATE_DIVETACKLE then
+		self:Remove()
+	end
+
+	self:NextThink(CurTime())
+	return true
 end
 
 function ENT:ShouldNotCollide(ent)

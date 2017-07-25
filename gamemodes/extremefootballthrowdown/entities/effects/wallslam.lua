@@ -24,9 +24,15 @@ function EFFECT:Init(data)
 		ent:SetPos(pos + dir * 16)
 		ent:PhysicsInitBox(vNBounds, vBounds)
 		ent:SetCollisionBounds(vNBounds, vBounds)
-		ent:GetPhysicsObject():SetMaterial("rock")
-		ent:GetPhysicsObject():ApplyForceOffset(ent:GetPos() + VectorRand() * 5, dir * math.Rand(300, 800))
-		timer.SimpleEx(math.Rand(4, 6), ent.Remove, ent)
+
+		local phys = ent:GetPhysicsObject()
+		if phys:IsValid() then
+			phys:SetMaterial("rock")
+			phys:SetVelocityInstantaneous(dir * math.Rand(100, 400))
+			phys:AddAngleVelocity(VectorRand() * 3000)
+		end
+
+		SafeRemoveEntityDelayed(ent, math.Rand(4, 5))
 	end
 end
 

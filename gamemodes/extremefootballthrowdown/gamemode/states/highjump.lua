@@ -2,6 +2,10 @@ STATE.Velocity = 600
 
 function STATE:Started(pl, oldstate)
 	pl:SetNextMoveVelocity(Vector(0, 0, self.Velocity))
+
+	if SERVER then
+		pl:SetCollisionMode(COLLISION_PASSTHROUGH)
+	end
 end
 
 function STATE:Ended(pl, newstate)

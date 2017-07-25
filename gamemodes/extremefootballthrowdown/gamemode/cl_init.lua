@@ -1,18 +1,20 @@
+include("sh_globals.lua")
+
 include("cl_obj_entity_extend.lua")
 include("cl_obj_player_extend.lua")
 
 include("shared.lua")
 
-include("animationsapi/cl_boneanimlib.lua")
-include("animationsapi/cl_animeditor.lua")
+--[[include("animationsapi/cl_boneanimlib.lua")
+include("animationsapi/cl_animeditor.lua")]]
 
+include("cl_draw.lua")
 include("cl_postprocess.lua")
+
+include("vgui/dex3dnotification.lua")
 
 GM.LerpRateOn = 10
 GM.LerpRateOff = 8
-
-TEXT_ALIGN_TOP_REAL = TEXT_ALIGN_TOP
-TEXT_ALIGN_BOTTOM_REAL = TEXT_ALIGN_BOTTOM
 
 local OldHealth = 0
 local LastHealthLoss = 0
@@ -28,10 +30,15 @@ local STEPSOUNDTIME_WATER_KNEE = STEPSOUNDTIME_WATER_KNEE
 local TEXT_ALIGN_CENTER = TEXT_ALIGN_CENTER
 local TEXT_ALIGN_TOP = TEXT_ALIGN_TOP
 local TEXT_ALIGN_BOTTOM = TEXT_ALIGN_BOTTOM
-local TEXT_ALIGN_TOP_REAL = TEXT_ALIGN_TOP_REAL
-local TEXT_ALIGN_BOTTOM_REAL = TEXT_ALIGN_BOTTOM_REAL
 local TEXT_ALIGN_LEFT = TEXT_ALIGN_LEFT
 local TEXT_ALIGN_RIGHT = TEXT_ALIGN_RIGHT
+local SCALE3D2D = SCALE3D2D
+local SCALE3D2DI = SCALE3D2DI
+local SCALE3D2D_LARGE = SCALE3D2D_LARGE
+local SCALE3D2D_LARGEI = SCALE3D2D_LARGEI
+local bit_band = bit.band
+local MOVETYPE_WALK = MOVETYPE_WALK
+local IN_DUCK = IN_DUCK
 local ScrH = ScrH
 local math_max = math.max
 local math_min = math.min
@@ -100,6 +107,11 @@ function GM:_CreateMove(cmd)
 		return
 	end
 
+	-- Prevent ducking unless on the ground or swimming.
+	if bit_band(cmd:GetButtons(), IN_DUCK) ~= 0 and MySelf:GetMoveType() == MOVETYPE_WALK and not MySelf:OnGround() and not MySelf:IsSwimming() and MySelf:Alive() then
+		cmd:SetButtons(cmd:GetButtons() - IN_DUCK)
+	end
+
 	local ang = cmd:GetViewAngles()
 
 	self.CameraYawLerp = math.Clamp(self.CameraYawLerp + math.AngleDifference(self.PrevCameraYaw, ang.yaw) * FrameTime() * 120, -90, 90)
@@ -122,6 +134,8 @@ local HealthBarDistance = 1024
 local HealthBarDistanceEnemy = 768
 local colFriend = Color(10, 255, 10, 200)
 local colFriendOT = Color(255, 160, 0, 200)
+local vecUp = Vector(0, 0, 1)
+local vecDown = Vector(0, 0, -1)
 local matFriendRing = Material("SGM/playercircle")
 function GM:_PostPlayerDraw(pl)
 	if pl ~= MySelf then
@@ -133,8 +147,8 @@ function GM:_PostPlayerDraw(pl)
 		if pl:IsFriend() then
 			local col = teamid == myteam and colFriend or colFriendOT
 			render.SetMaterial(matFriendRing)
-			render.DrawQuadEasy(pos, Vector(0, 0, 1), 32, 32, col)
-			render.DrawQuadEasy(pos, Vector(0, 0, -1), 32, 32, col)
+			render.DrawQuadEasy(pos, vecUp, 32, 32, col)
+			render.DrawQuadEasy(pos, vecDown, 32, 32, col)
 		end
 
 		local eyepos = EyePos()
@@ -160,10 +174,11 @@ function GM:_PostPlayerDraw(pl)
 			--render.PushFilterMin(TEXFILTER.ANISOTROPIC)
 			--render.PushFilterMag(TEXFILTER.ANISOTROPIC)
 
-			cam.Start3D2D(pos + camang:Up() * 20, camang, 0.1 + fade * 0.1)
+			cam.Start3D2D(pos + camang:Up() * 20, camang, (1 + fade) * 0.1 * SCALE3D2DI)
 			--cam.IgnoreZ(true)
 
-			draw.SimpleText(pl:Name().." ("..pl:Health().."%)", "eft_3dothernametext", 0, 0, col, TEXT_ALIGN_CENTER)
+			--draw.SimpleTextBlurBG(pl:Name().." ("..pl:Health().."%)", "eft_3dothernametext", 0, 0, col, TEXT_ALIGN_CENTER)
+			draw.SimpleTextBlurBG(pl:Name(), "eft_3dothernametext", 0, 0, col, TEXT_ALIGN_CENTER)
 
 			--cam.IgnoreZ(false)
 			cam.End3D2D()
@@ -401,6 +416,8 @@ function GM:Draw3DHUD()
 		self:Draw3DGameState()
 	end
 
+	self:Draw3DNotices()
+
 	cam.End3D()
 end
 
@@ -424,7 +441,7 @@ function GM:Draw3DPotentialWeapon()
 	local col = Color(HSVtoRGB((CurTime() * 180) % 360))
 	col.a = PotentialWeaponLerp * 255
 
-	local w, h = 460, 40
+	--local w, h = 460, 40
 
 	local camang = EyeAngles3D2D()
 	camang:RotateAroundAxis(camang:Right(), self.CameraYawLerp / 3)
@@ -432,10 +449,10 @@ function GM:Draw3DPotentialWeapon()
 	--render.PushFilterMin(TEXFILTER.ANISOTROPIC)
 	--render.PushFilterMag(TEXFILTER.ANISOTROPIC)
 	cam.IgnoreZ(true)
-	cam.Start3D2D(EyePos3D2DScreen(0, -300), camang, 1)
+	cam.Start3D2D(EyePos3D2DScreen(0, -300), camang, SCALE3D2D_LARGEI)
 
-		draw.RoundedBox(16, w * -0.5, 0, w, h, color_black_alpha90)
-		draw.SimpleText("["..(input.LookupBinding("+use") or "USE").."] PICK UP "..PotentialWeaponName, "eft_3dteamscore", 0, h / 2, col, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+		--draw.RoundedBox(16, w * -0.5, 0, w, h, color_black_alpha90)
+		draw.SimpleTextBlurBG("["..(input.LookupBinding("+use") or "USE").."] PICK UP "..PotentialWeaponName, "eft_3dweapon", 0, 0 --[[h / 2]], col, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 
 	cam.End3D2D()
 	cam.IgnoreZ(false)
@@ -461,7 +478,7 @@ function GM:Draw3DWeapon()
 	local col = Color(HSVtoRGB((CurTime() * 180) % 360))
 	col.a = WeaponLerp * 255
 
-	local w, h = 300, 40
+	--local w, h = 300, 40
 
 	local camang = EyeAngles3D2D()
 	camang:RotateAroundAxis(camang:Right(), 30 + self.CameraYawLerp / 3)
@@ -469,10 +486,10 @@ function GM:Draw3DWeapon()
 	--render.PushFilterMin(TEXFILTER.ANISOTROPIC)
 	--render.PushFilterMag(TEXFILTER.ANISOTROPIC)
 	cam.IgnoreZ(true)
-	cam.Start3D2D(EyePos3D2DScreen(400, -450), camang, 1)
+	cam.Start3D2D(EyePos3D2DScreen(400, -450), camang, SCALE3D2D_LARGEI)
 
-		draw.RoundedBox(16, w * -0.5, 0, w, h, color_black_alpha90)
-		draw.SimpleText(WeaponName.."!", "eft_3dteamscore", 0, h / 2, col, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+		--draw.RoundedBox(16, w * -0.5, 0, w, h, color_black_alpha90)
+		draw.SimpleTextBlurBG(WeaponName.."!", "eft_3dweapon", 0, 0 --[[h / 2]], col, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 
 	cam.End3D2D()
 	cam.IgnoreZ(false)
@@ -497,9 +514,9 @@ function GM:Draw3DGoalIndicator()
 	--render.PushFilterMin(TEXFILTER.ANISOTROPIC)
 	--render.PushFilterMag(TEXFILTER.ANISOTROPIC)
 	cam.IgnoreZ(true)
-	cam.Start3D2D(EyePos3D2DScreen(0, 250), camang, 1)
+	cam.Start3D2D(EyePos3D2DScreen(0, 250), camang, SCALE3D2D_LARGEI)
 
-		draw.SimpleText("GO >>>", "eft_3dteamscore", 0, 0, Color(HSVtoRGB((CurTime() * 180) % 360)), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+		draw.SimpleTextBlurBG("GO >>>", "eft_3dteamscore", 0, 0, Color(HSVtoRGB((CurTime() * 180) % 360)), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 
 	cam.End3D2D()
 	cam.IgnoreZ(false)
@@ -511,32 +528,56 @@ net.Receive("eft_nearestgoal", function(length)
 	GAMEMODE.NearestGoal = net.ReadVector()
 end)
 
+function GM:CreateFonts()
+	local blursize = 8 * SCALE3D2D
+	local blursize_large = 8 * SCALE3D2D_LARGE
+
+	local function create(name, size, face)
+		face = face or "coolvetica"
+
+		surface.CreateFont(name, {font = face, size = size * SCALE3D2D, weight = 0, antialias = true, shadow = false, outline = false})
+		surface.CreateFont(name.."_shd", {font = face, size = size * SCALE3D2D, weight = 0, antialias = true, shadow = false, outline = false, blursize = blursize})
+	end
+
+	local function create_large(name, size, face)
+		face = face or "coolvetica"
+
+		surface.CreateFont(name, {font = face, size = size * SCALE3D2D_LARGE, weight = 0, antialias = true, shadow = false, outline = false})
+		surface.CreateFont(name.."_shd", {font = face, size = size * SCALE3D2D_LARGE, weight = 0, antialias = true, shadow = false, outline = false, blursize = blursize_large})
+	end
+
+	surface.CreateFont("eft_3dstruggleicon",  {font = "coolvetica", size = 48, weight = 1000, antialias = true, shadow = false, outline = false})
+	surface.CreateFont("eft_3dstruggletext",  {font = "coolvetica", size = 24, weight = 0, antialias = true, shadow = false, outline = false})
+	surface.CreateFont("eft_3dpowertext",  {font = "coolvetica", size = 40, weight = 0, antialias = true, shadow = false, outline = false})
+	surface.CreateFont("eft_3dheadertext",  {font = "coolvetica", size = 72, weight = 500, antialias = true, shadow = false, outline = false})
+
+	create("eft_3dhealthbar", 28)
+	create("eft_3dothernametext", 48)
+	create_large("eft_3dpoweruptext", 64)
+	create_large("eft_3dpoweruptimetext",  48)
+	create_large("eft_3dweapon", 48)
+	create("eft_3dteamname", 32)
+	create("eft_3dteamscore", 40)
+	create("eft_3dpity", 28)
+	create("eft_3dballtext", 32)
+	create("eft_3dballtextsmall", 24)
+	create("eft_3dnotice", 40)
+
+	surface.CreateFont("eft_3dwinnertext",  {font = "coolvetica", size = 128, weight = 500, antialias = true, shadow = false, outline = false})
+	surface.CreateFont("eft_3djerseytext",  {font = "coolvetica", size = 64, weight = 500, antialias = true, shadow = false, outline = false})
+end
+
 function GM:Initialize()
 	self.BaseClass.Initialize(self)
 
-	surface.CreateFont("eft_3dhealthbar",  {font = "coolvetica", size = 28, weight = 0, antialias = false, shadow = false, outline = true})
-	surface.CreateFont("eft_3dstruggleicon",  {font = "coolvetica", size = 48, weight = 1000, antialias = false, shadow = false, outline = false})
-	surface.CreateFont("eft_3dstruggletext",  {font = "coolvetica", size = 24, weight = 0, antialias = false, shadow = false, outline = true})
-	surface.CreateFont("eft_3dpowertext",  {font = "coolvetica", size = 40, weight = 0, antialias = false, shadow = false, outline = true})
-	surface.CreateFont("eft_3dpoweruptext",  {font = "coolvetica", size = 64, weight = 0, antialias = false, shadow = false, outline = true})
-	surface.CreateFont("eft_3dpoweruptimetext",  {font = "coolvetica", size = 48, weight = 0, antialias = false, shadow = false, outline = true})
-	surface.CreateFont("eft_3dheadertext",  {font = "coolvetica", size = 72, weight = 500, antialias = false, shadow = false, outline = true})
-	surface.CreateFont("eft_3dnametext",  {font = "coolvetica", size = 32, weight = 0, antialias = false, shadow = false, outline = true})
-	surface.CreateFont("eft_3dothernametext",  {font = "coolvetica", size = 48, weight = 0, antialias = false, shadow = false, outline = true})
-	surface.CreateFont("eft_3dteamname",  {font = "coolvetica", size = 24, weight = 0, antialias = false, shadow = false, outline = true})
-	surface.CreateFont("eft_3dteamscore",  {font = "coolvetica", size = 40, weight = 0, antialias = false, shadow = false, outline = true})
-	surface.CreateFont("eft_3dpity",  {font = "coolvetica", size = 28, weight = 0, antialias = false, shadow = false, outline = true})
-	surface.CreateFont("eft_3dballtext",  {font = "coolvetica", size = 32, weight = 0, antialias = false, shadow = false, outline = true})
-	surface.CreateFont("eft_3dballtextsmall",  {font = "coolvetica", size = 24, weight = 0, antialias = false, shadow = false, outline = true})
-	surface.CreateFont("eft_3dwinnertext",  {font = "coolvetica", size = 128, weight = 500, antialias = false, shadow = false, outline = true})
-	surface.CreateFont("eft_3djerseytext",  {font = "coolvetica", size = 64, weight = 500, antialias = false, shadow = false, outline = true})
-
-	self:RegisterWeapons()
+	hook.Remove("PrePlayerDraw", "DrawPlayerRing")
 
 	tempColRed = table.Copy(team.GetColor(TEAM_RED))
 	tempColBlue = table.Copy(team.GetColor(TEAM_BLUE))
 
-	hook.Remove("PrePlayerDraw", "DrawPlayerRing")
+	self:RegisterWeapons()
+	self:CreateFonts()
+	self:PrecacheResources()
 end
 
 function GM:Draw3DBallPowerup()
@@ -566,14 +607,14 @@ function GM:Draw3DBallPowerup()
 	--render.PushFilterMin(TEXFILTER.ANISOTROPIC)
 	--render.PushFilterMag(TEXFILTER.ANISOTROPIC)
 	cam.IgnoreZ(true)
-	cam.Start3D2D(EyePos3D2DScreen(0, 400), camang, 1 + math.abs(math.sin(time * math.pi * 2)) ^ 4 * 0.25)
+	cam.Start3D2D(EyePos3D2DScreen(0, 400), camang, (1 + math.abs(math.sin(time * math.pi * 2)) ^ 4 * 0.25) * SCALE3D2D_LARGEI)
 
 		if statetable.Name then
-			draw.SimpleText(string.upper(statetable.Name), "eft_3dpoweruptext", 0, -2, col, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM_REAL)
+			draw.SimpleTextBlurBG(string.upper(statetable.Name), "eft_3dpoweruptext", 0, -2, col, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM)
 		end
 		if timeleft ~= -1 then
 			col.r = 255 col.g = 255 col.b = 255
-			draw.SimpleText(util.ToMinutesSecondsMilliseconds(timeleft), "eft_3dpoweruptimetext", 0, 2, col, TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP_REAL)
+			draw.SimpleTextBlurBG(util.ToMinutesSecondsMilliseconds(timeleft), "eft_3dpoweruptimetext", 0, 2, col, TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
 		end
 
 	cam.End3D2D()
@@ -610,7 +651,7 @@ function GM:Draw3DGameWinner()
 			draw.SimpleText("GAME", "eft_3dwinnertext", 16 + rfadein * 1000, 0, team.GetColor(TEAM_BLUE), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 		else
 			draw.SimpleText("V I C T O R Y", "eft_3dwinnertext", 0, -16 - rfadein * 1000, Color(HSVtoRGB((time * 180) % 360)), TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM)
-			draw.SimpleText(team.GetName(winner), "eft_3dwinnertext", 0, 16 + rfadein * 1000, team.GetColor(winner), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP_REAL)
+			draw.SimpleText(team.GetName(winner), "eft_3dwinnertext", 0, 16 + rfadein * 1000, team.GetColor(winner), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP)
 		end
 
 	cam.End3D2D()
@@ -673,7 +714,7 @@ function GM:Draw3DRoundWinner()
 	cam.IgnoreZ(true)
 	cam.Start3D2D(EyePos3D2DScreen(-1200 + self.RoundEndScroll * 2400, -40), ang, size)
 
-		draw.SimpleText(string.upper(team.GetName(winner)), "eft_3dwinnertext", 0, 2, col, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM)
+		draw.SimpleText(string.upper(team.GetName(winner)), "eft_3dwinnertext", 0, 2, col, TEXT_ALIGN_CENTER)
 
 	cam.End3D2D()
 	cam.IgnoreZ(false)
@@ -744,8 +785,12 @@ function GM:Draw3DOvertime()
 	--render.PopFilterMag()
 end
 
+local W_TEAMSCORES = 128 * SCALE3D2D
+local H_TEAMSCORES = 80 * SCALE3D2D
+--local X_TEAMSCORES = W_TEAMSCORES * -0.5
+local Y_TEAMSCORES = 4 * SCALE3D2D
 function GM:Draw3DTeamScores()
-	local w, h = 128, 64
+	local carryteam = self.Ball:IsValid() and self.Ball:GetCarrier():IsValid() and self.Ball:GetCarrier():Team()
 
 	local camang = EyeAngles3D2D()
 	camang:RotateAroundAxis(camang:Right(), -30 + self.CameraYawLerp / 3)
@@ -753,12 +798,15 @@ function GM:Draw3DTeamScores()
 	--render.PushFilterMin(TEXFILTER.ANISOTROPIC)
 	--render.PushFilterMag(TEXFILTER.ANISOTROPIC)
 	cam.IgnoreZ(true)
-	cam.Start3D2D(EyePos3D2DScreen(-400, 450), camang, 1)
-		draw.RoundedBox(16, w * -0.5, 0, w, h, color_black_alpha90)
-		draw.SimpleText(team.GetName(TEAM_RED), "eft_3dteamname", 0, 8, team.GetColor(TEAM_RED), TEXT_ALIGN_CENTER)
-		draw.SimpleText(team.GetScore(TEAM_RED).." / "..self.ScoreLimit, "eft_3dteamscore", 0, h, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM_REAL)
+	cam.Start3D2D(EyePos3D2DScreen(-400, 500), camang, SCALE3D2DI)
+		--draw.RoundedBox(16 * SCALE3D2D, X_TEAMSCORES, 0, W_TEAMSCORES, H_TEAMSCORES, color_black_alpha90)
+		if carryteam == TEAM_RED then
+			draw.SimpleTextBlurBG("▼", "eft_3dteamname", 0, math.sin(RealTime() * 3) ^ 2 * -8 * SCALE3D2D, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM)
+		end
+		draw.SimpleTextBlurBG(team.GetName(TEAM_RED), "eft_3dteamname", 0, Y_TEAMSCORES, team.GetColor(TEAM_RED), TEXT_ALIGN_CENTER)
+		draw.SimpleTextBlurBG(team.GetScore(TEAM_RED).." / "..self.ScoreLimit, "eft_3dteamscore", 0, H_TEAMSCORES, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM)
 		if team.HasPity(TEAM_RED) then
-			draw.SimpleText("RAGE!", "eft_3dpity", 0, h + 8, Color(HSVtoRGB(math.abs(math.sin(CurTime() * 4)) * 50)), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP_REAL)
+			draw.SimpleTextBlurBG("RAGE!", "eft_3dpity", 0, H_TEAMSCORES + 8, Color(HSVtoRGB(math.abs(math.sin(CurTime() * 4)) * 50)), TEXT_ALIGN_CENTER)
 		end
 
 	cam.End3D2D()
@@ -771,13 +819,15 @@ function GM:Draw3DTeamScores()
 	--render.PushFilterMin(TEXFILTER.ANISOTROPIC)
 	--render.PushFilterMag(TEXFILTER.ANISOTROPIC)
 	cam.IgnoreZ(true)
-	cam.Start3D2D(EyePos3D2DScreen(400, 450), camang, 1)
-
-		draw.RoundedBox(16, w * -0.5, 0, w, h, color_black_alpha90)
-		draw.SimpleText(team.GetName(TEAM_BLUE), "eft_3dteamname", 0, 8, team.GetColor(TEAM_BLUE), TEXT_ALIGN_CENTER)
-		draw.SimpleText(team.GetScore(TEAM_BLUE).." / "..self.ScoreLimit, "eft_3dteamscore", 0, h, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM_REAL)
+	cam.Start3D2D(EyePos3D2DScreen(400, 500), camang, SCALE3D2DI)
+		--draw.RoundedBox(16 * SCALE3D2D, X_TEAMSCORES, 0, W_TEAMSCORES, H_TEAMSCORES, color_black_alpha90)
+		if carryteam == TEAM_BLUE then
+			draw.SimpleTextBlurBG("▼", "eft_3dteamname", 0, math.sin(RealTime() * 3) ^ 2 * -8 * SCALE3D2D, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM)
+		end
+		draw.SimpleTextBlurBG(team.GetName(TEAM_BLUE), "eft_3dteamname", 0, Y_TEAMSCORES, team.GetColor(TEAM_BLUE), TEXT_ALIGN_CENTER)
+		draw.SimpleTextBlurBG(team.GetScore(TEAM_BLUE).." / "..self.ScoreLimit, "eft_3dteamscore", 0, H_TEAMSCORES, color_white, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM)
 		if team.HasPity(TEAM_BLUE) then
-			draw.SimpleText("RAGE!", "eft_3dpity", 0, h + 8, Color(HSVtoRGB(math.abs(math.sin(CurTime() * 4)) * 50)), TEXT_ALIGN_CENTER, TEXT_ALIGN_TOP_REAL)
+			draw.SimpleTextBlurBG("RAGE!", "eft_3dpity", 0, H_TEAMSCORES, Color(HSVtoRGB(math.abs(math.sin(CurTime() * 4)) * 50)), TEXT_ALIGN_CENTER)
 		end
 
 	cam.End3D2D()
@@ -786,11 +836,83 @@ function GM:Draw3DTeamScores()
 	--render.PopFilterMag()
 end
 
+local Notices = {}
+function GM:Draw3DNotices()
+	if #Notices == 0 then return end
+
+	local camang = EyeAngles3D2D()
+	local time = UnPredictedCurTime()
+
+	--local fwd = camang:Forward()
+	camang:RotateAroundAxis(camang:Right(), self.CameraYawLerp / 3)
+	--camang:RotateAroundAxis(fwd, 30)
+	camang:RotateAroundAxis(camang:Forward(), 30)
+
+	surface.DisableClipping(true)
+	DisableClipping(true)
+
+	local done = true
+
+	local y = -300
+	local bulge, size, t, x
+
+	for i, notice in pairs(Notices) do
+		if notice.Done then continue end
+
+		if time < notice.EndTime then
+			size = 1
+
+			-- bulge from certain slot
+			bulge = math.Clamp(1 - math.abs(i - 4) / 4, 0, 1)
+
+			t = math.Clamp((time - notice.StartTime) / (notice.EndTime - notice.StartTime), 0, 1)
+
+			size = size + math.Clamp(0.1 - t, 0, 1) ^ 2 * 2
+			size = size + bulge * 0.25
+
+			done = false
+			cam.IgnoreZ(true)
+			cam.Start3D2D(EyePos3D2DScreen(0, -300 + i * 48 + bulge * 12), camang, size * SCALE3D2DI)
+
+			notice.Panel:SetPaintedManually(false)
+			notice.Panel:PaintManual()
+			notice.Panel:SetPaintedManually(true)
+
+			cam.End3D2D()
+			cam.IgnoreZ(false)
+
+			camang:RotateAroundAxis(camang:Forward(), -5)
+		else
+			notice.Done = true
+			notice.Panel:Remove()
+		end
+	end
+
+	surface.DisableClipping(false)
+	DisableClipping(false)
+
+	if done then Notices = {} end
+end
+
+function GM:Add3DNotice(...)
+	local panel = vgui.Create("DEX3DNotification")
+	panel:SetNotification(...)
+	panel:SetAlpha(0)
+	panel:AlphaTo(255, 0.2)
+	panel:AlphaTo(0, 0.2, 4.8)
+
+	if #Notices >= 5 then
+		table.remove(Notices, 1)
+	end
+
+	table.insert(Notices, {Panel = panel, EndTime = UnPredictedCurTime() + 5, StartTime = UnPredictedCurTime()})
+end
+
 local colPlusIcon = Color(255, 255, 255)
 -- And now presenting, the most expensive health bar in the world!
 local numbox = 25
 local step = 100 / numbox
-local healthw, healthh = 320, 52
+local healthw, healthh = 320 * SCALE3D2D, 52 * SCALE3D2D
 local boxw = healthw * 0.1
 local hpr_1 = healthh * 0.45
 local hpr_2 = healthw * 0.75
@@ -821,9 +943,9 @@ function GM:Draw3DHealthBar()
 	--render.PushFilterMin(TEXFILTER.ANISOTROPIC)
 	--render.PushFilterMag(TEXFILTER.ANISOTROPIC)
 	cam.IgnoreZ(true)
-	cam.Start3D2D(EyePos3D2DScreen(-512, -512), camang, 1)
+	cam.Start3D2D(EyePos3D2DScreen(-512, -512), camang, SCALE3D2DI)
 
-		draw.RoundedBoxEx(16, 0, 0, boxw, healthh, color_black_alpha160, true, false, true, false)
+		--draw.RoundedBoxEx(16, 0, 0, boxw, healthh, color_black_alpha160, true, false, true, false)
 		surface.SetDrawColor(0, 0, 0, 160)
 		surface.DrawRect(boxw, hpr_1, hpr_2, hpr_3)
 
@@ -860,6 +982,7 @@ function GM:Draw3DHealthBar()
 	--render.PopFilterMag()
 end
 
+local extend = 50 * SCALE3D2D
 function GM:Draw3DBallIndicator()
 	local ball = self:GetBall()
 	if not ball:IsValid() then return end
@@ -882,7 +1005,7 @@ function GM:Draw3DBallIndicator()
 	--render.PushFilterMin(TEXFILTER.ANISOTROPIC)
 	--render.PushFilterMag(TEXFILTER.ANISOTROPIC)
 	cam.IgnoreZ(true)
-	cam.Start3D2D(ballpos, ang, 1)
+	cam.Start3D2D(ballpos, ang, SCALE3D2DI)
 
 		local ang2d = Angle(0, 0, math.sin(CurTime() * math.pi * 0.5) * 45 + 315)
 
@@ -894,25 +1017,26 @@ function GM:Draw3DBallIndicator()
 		if not carrier:IsValid() and autoreturn > 0 then
 			local delta = autoreturn - CurTime()
 			if delta <= 5 then
-				draw.SimpleText(string.ToMinutesSecondsMilliseconds(math_max(0, delta)), "eft_3dballtextsmall", 0, -42, col, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM_REAL)
+				--draw.SimpleText(string.ToMinutesSecondsMilliseconds(math_max(0, delta)), "eft_3dballtextsmall", 0, -42, col, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM)
+				draw.SimpleTextBlurBG(string.format("%.2f", math_max(0, delta)), "eft_3dballtextsmall", 0, -42 * SCALE3D2D, col, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM)
 			end
 		end
 
 		local dist = eyepos:Distance(ballpos)
 		if dist > 256 and (dist > 2048 or util.TraceLine({start = ballpos, endpos = eyepos, mask = MASK_SOLID_BRUSHONLY}).Hit) then
-			local up = ang2d:Up()
-			draw.SimpleText("L", "eft_3dballtext", up.y * 50, up.z * 50, col, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+			local up = extend * ang2d:Up()
+			draw.SimpleTextBlurBG("L", "eft_3dballtext", up.y, up.z, col, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 			ang2d:RotateAroundAxis(ang2d:Forward(), 30)
-			up = ang2d:Up()
-			draw.SimpleText("L", "eft_3dballtext", up.y * 50, up.z * 50, col, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+			up = extend * ang2d:Up()
+			draw.SimpleTextBlurBG("L", "eft_3dballtext", up.y, up.z, col, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 			ang2d:RotateAroundAxis(ang2d:Forward(), 30)
-			up = ang2d:Up()
-			draw.SimpleText("A", "eft_3dballtext", up.y * 50, up.z * 50, col, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+			up = extend * ang2d:Up()
+			draw.SimpleTextBlurBG("A", "eft_3dballtext", up.y, up.z, col, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 			ang2d:RotateAroundAxis(ang2d:Forward(), 30)
-			up = ang2d:Up()
-			draw.SimpleText("B", "eft_3dballtext", up.y * 50, up.z * 50, col, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+			up = extend * ang2d:Up()
+			draw.SimpleTextBlurBG("B", "eft_3dballtext", up.y, up.z, col, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 
-			local size = 64 + math.abs(math.cos(CurTime() * math.pi * 2)) ^ 2 * 12
+			local size = (64 + math.abs(math.cos(CurTime() * math.pi * 2)) ^ 2 * 12) * SCALE3D2D
 			surface.SetMaterial(matRing)
 			surface.SetDrawColor(col)
 			surface.DrawTexturedRect(size * -0.5, size * -0.5, size, size)

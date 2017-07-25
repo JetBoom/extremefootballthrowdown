@@ -39,7 +39,7 @@ GM.TakeFragOnSuicide = true			// -1 frag on suicide
 
 GM.MaximumDeathLength = 0			// Player will repspawn if death length > this (can be 0 to disable)
 GM.MinimumDeathLength = 2			// Player has to be dead for at least this long
-GM.AutomaticTeamBalance = false     // Teams will be periodically balanced 
+GM.AutomaticTeamBalance = false     // Teams will be periodically balanced
 GM.ForceJoinBalancedTeams = true	// Players won't be allowed to join a team if it has more players than another team
 GM.RealisticFallDamage = false		// Set to true if you want realistic fall damage instead of the fix 10 damage.
 GM.AddFragsToTeamScore = false		// Adds player's individual kills to team score (must be team based)
@@ -81,19 +81,19 @@ TEAM_RED 		= 4
 function GM:CreateTeams()
 
 	if ( !GAMEMODE.TeamBased ) then return end
-	
+
 	team.SetUp( TEAM_GREEN, "Green Team", Color( 70, 230, 70 ), true )
 	team.SetSpawnPoint( TEAM_GREEN, "info_player_start" ) // The list of entities can be a table
-	
+
 	team.SetUp( TEAM_ORANGE, "Orange Team", Color( 255, 200, 50 ) )
 	team.SetSpawnPoint( TEAM_ORANGE, "info_player_start", true )
-	
+
 	team.SetUp( TEAM_BLUE, "Blue Team", Color( 80, 150, 255 ) )
 	team.SetSpawnPoint( TEAM_BLUE, "info_player_start", true )
-	
+
 	team.SetUp( TEAM_RED, "Red Team", Color( 255, 80, 80 ) )
 	team.SetSpawnPoint( TEAM_RED, "info_player_start", true )
-	
+
 	team.SetUp( TEAM_SPECTATOR, "Spectators", Color( 200, 200, 200 ), true )
 	team.SetSpawnPoint( TEAM_SPECTATOR, "info_player_start" )
 	team.SetClass( TEAM_SPECTATOR, { "Spectator" } )
@@ -104,28 +104,45 @@ function GM:InGamemodeVote()
 	return GetGlobalBool( "InGamemodeVote", false )
 end
 
+function GM:IsCompetitive()
+	return false
+end
+
 /*---------------------------------------------------------
    Name: gamemode:TeamHasEnoughPlayers( Number teamid )
    Desc: Return true if the team has too many players.
 		 Useful for when forced auto-assign is on.
 ---------------------------------------------------------*/
-function GM:TeamHasEnoughPlayers( teamid )
+function GM:TeamHasEnoughPlayers( teamid, ply )
 
-	if teamid == TEAM_SPECTATOR then return false end
+	if GAMEMODE:IsCompetitive() or teamid == TEAM_SPECTATOR then return false end
 
 	local PlayerCount = team.NumPlayers( teamid )
 
 	// Don't let them join a team if it has more players than another team
+	// If we're already playing then only allow swapping to teams that need players.
 	if ( GAMEMODE.ForceJoinBalancedTeams ) then
-	
+
 		for id, tm in pairs( team.GetAllTeams() ) do
 			if ( id > 0 && id < 1000 && team.NumPlayers( id ) < PlayerCount && team.Joinable(id) ) then return true end
 		end
-		
+
+		if team.Joinable(ply:Team()) and ply:Team() ~= TEAM_SPECTATOR then
+			local min = 999
+			for id, tm in pairs(team.GetAllTeams()) do
+				if id > 0 and id < 1000 then
+					min = math.min(min, team.NumPlayers(id))
+				end
+			end
+
+			if team.NumPlayers(teamid) <= min then return true end
+		end
+
 	end
 
+
 	return false
-	
+
 end
 
 /*---------------------------------------------------------
@@ -134,18 +151,18 @@ end
 ---------------------------------------------------------*/
 function GM:PlayerCanJoinTeam( ply, teamid )
 
-	if ( SERVER && !self.BaseClass:PlayerCanJoinTeam( ply, teamid ) ) then 
-		return false 
+	if ( SERVER && !self.BaseClass:PlayerCanJoinTeam( ply, teamid ) ) then
+		return false
 	end
 
-	if ( GAMEMODE:TeamHasEnoughPlayers( teamid ) ) then
+	if ( GAMEMODE:TeamHasEnoughPlayers( teamid, ply ) ) then
 		ply:ChatPrint( "That team is full!" )
 		ply:SendLua("GAMEMODE:ShowTeam()")
 		return false
 	end
-	
+
 	return true
-	
+
 end
 
 /*---------------------------------------------------------
@@ -187,23 +204,23 @@ end
 		 If you want to disable all footsteps set GM.NoPlayerFootsteps to true.
 		 If you want to disable footsteps on a class, set Class.DisableFootsteps to true.
 ---------------------------------------------------------*/
-function GM:PlayerFootstep( ply, pos, foot, sound, volume, rf ) 
+function GM:PlayerFootstep( ply, pos, foot, sound, volume, rf )
 
 	if( GAMEMODE.NoPlayerFootsteps || !ply:Alive() || ply:Team() == TEAM_SPECTATOR || ply:IsObserver() ) then
 		return true;
 	end
-	
+
 	local Class = ply:GetPlayerClass();
 	if( !Class ) then return end
-	
+
 	if( Class.DisableFootsteps ) then // rather than using a hook, we can just do this to override the function instead.
 		return true;
 	end
-	
+
 	if( Class.Footstep ) then
 		return Class:Footstep( ply, pos, foot, sound, volume, rf ); // Call footstep function in class, you can use this to make custom footstep sounds
 	end
-	
+
 end
 
 /*---------------------------------------------------------
@@ -215,24 +232,24 @@ end
 function GM:CalcView( ply, origin, angles, fov )
 
 	local view = ply:CallClassFunction( "CalcView", origin, angles, fov ) or { ["origin"] = origin, ["angles"] = angles, ["fov"] = fov };
-	
+
 	origin = view.origin or origin
 	angles = view.angles or angles
 	fov = view.fov or fov
-		
+
 	local wep = ply:GetActiveWeapon()
 	if ( IsValid( wep ) ) then
-	
+
 		local func = wep.GetViewModelPosition
 		if ( func ) then view.vm_origin,  view.vm_angles = func( wep, origin*1, angles*1 ) end
-		
+
 		local func = wep.CalcView
 		if ( func ) then view.origin, view.angles, view.fov = func( wep, ply, origin*1, angles*1, fov ) end
-	
+
 	end
 
 	return view
-	
+
 end
 
 /*---------------------------------------------------------
@@ -247,9 +264,9 @@ function GM:GetTimeLimit()
 	if( GAMEMODE.GameLength > 0 ) then
 		return GAMEMODE.GameLength * 60;
 	end
-	
+
 	return -1;
-	
+
 end
 
 /*---------------------------------------------------------
@@ -260,7 +277,7 @@ function GM:GetGameTimeLeft()
 
 	local EndTime = GAMEMODE:GetTimeLimit();
 	if ( EndTime == -1 ) then return -1 end
-	
+
 	return EndTime - CurTime()
 
 end
@@ -271,13 +288,13 @@ end
 		  the player is allowed to noclip, false to block
 ---------------------------------------------------------*/
 function GM:PlayerNoClip( pl, on )
-	
+
 	// Allow noclip if we're in single player or have cheats enabled
 	if ( GAMEMODE.PlayerCanNoClip || game.SinglePlayer() || GetConVar( "sv_cheats" ):GetBool() ) then return true end
-	
+
 	// Don't if it's not.
 	return false
-	
+
 end
 
 // This function includes /yourgamemode/player_class/*.lua
@@ -296,7 +313,7 @@ function IncludePlayerClasses()
 
 end
 
-IncludePlayerClasses()		
+IncludePlayerClasses()
 
 function util.ToMinutesSeconds(seconds)
 	local minutes = math.floor(seconds / 60)

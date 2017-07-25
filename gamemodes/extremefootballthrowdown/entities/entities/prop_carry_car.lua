@@ -116,7 +116,7 @@ function ENT:DrawSpotlight(offset)
 		local LightPos = epos + LightNrm * 5
 
 		render.SetMaterial(matLight)
-		local Visibile = util.PixelVisible(LightPos, 16, self.PixVis)	
+		local Visibile = util.PixelVisible(LightPos, 16, self.PixVis)
 
 		if not Visibile then return end
 
@@ -193,15 +193,18 @@ function ENT:OnThink()
 		self:HitObject(nil, nil, self.TouchedEnemy)
 	end
 
-	if not self.Exploded and not self:GetCarrier():IsValid() then
+	if not self.Exploded then
 		local pos = self:GetPos()
-		local oldpos = self.LastPos
-		if oldpos then
-			local tr = util.TraceLine({start = oldpos, endpos = pos, mask = MASK_SOLID_BRUSHONLY})
-			if tr.Hit then
-				self:Explode(tr.HitPos, tr.HitNormal)
+		if not self:GetCarrier():IsValid() then
+			local oldpos = self.LastPos
+			if oldpos then
+				local tr = util.TraceLine({start = oldpos, endpos = pos, mask = MASK_SOLID_BRUSHONLY})
+				if tr.Hit then
+					self:Explode(tr.HitPos, tr.HitNormal)
+				end
 			end
 		end
+
 		self.LastPos = pos
 	end
 end

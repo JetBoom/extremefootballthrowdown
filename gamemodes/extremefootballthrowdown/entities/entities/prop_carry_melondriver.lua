@@ -31,6 +31,8 @@ end
 function ENT:SecondaryAttack(pl)
 	if pl:CanThrow() and self:GetFireTime() == 0 then
 		pl:SetState(STATE_THROW)
+	elseif self:GetFireTime() > 0 then
+		self:SetFireTime(0)
 	end
 
 	return true
@@ -142,7 +144,7 @@ function ENT:HitObject(hitpos, hitnormal, hitent)
 
 	if IsValid(hitent) and hitent:IsPlayer() and hitent:Team() ~= self:GetLastCarrierTeam() then
 		hitent:EmitSound("physics/body/body_medium_impact_hard"..math.random(6)..".wav")
-		hitent:ThrowFromPosition(hitpos + Vector(0, 0, -24), math.Clamp(self:GetVelocity():Length() * 1.2, 350, 750), true)
+		hitent:ThrowFromPosition(hitpos + Vector(0, 0, -24), math.Clamp(self:GetVelocity():Length() * 1.2, 350, 750), true, self:GetLastCarrier())
 		hitent:TakeDamage(20, self:GetLastCarrier(), self)
 	end
 

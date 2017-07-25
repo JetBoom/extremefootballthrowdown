@@ -58,13 +58,8 @@ function STATE:ThinkCompensatable(pl)
 		if CurTime() < pl:GetStateStart() + self.Time then return end
 
 		if SERVER then
-			local comp = pl:ShouldCompensate()
-
-			if comp then
-				pl:LagCompensation(true)
-			end
-
-			for _, tr in ipairs(pl:GetTargets()) do
+			local targets = pl:GetTargets(nil, nil, nil, nil, true)
+			for _, tr in ipairs(targets) do
 				local hitent = tr.Entity
 				if hitent:IsPlayer() then
 					local ent = ents.Create("prop_trashbin")
@@ -81,10 +76,6 @@ function STATE:ThinkCompensatable(pl)
 
 					break
 				end
-			end
-
-			if comp then
-				pl:LagCompensation(false)
 			end
 		end
 

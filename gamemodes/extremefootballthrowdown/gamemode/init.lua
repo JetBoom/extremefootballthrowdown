@@ -1,5 +1,6 @@
 AddCSLuaFile("cl_init.lua")
 AddCSLuaFile("shared.lua")
+AddCSLuaFile("sh_globals.lua")
 
 AddCSLuaFile("cl_obj_entity_extend.lua")
 AddCSLuaFile("cl_obj_player_extend.lua")
@@ -14,10 +15,15 @@ AddCSLuaFile("sh_translate.lua")
 AddCSLuaFile("sh_animations.lua")
 
 AddCSLuaFile("cl_postprocess.lua")
+AddCSLuaFile("cl_draw.lua")
+
+AddCSLuaFile("vgui/dex3dnotification.lua")
+
+include("sh_globals.lua")
 
 include("shared.lua")
 
-include("animationsapi/boneanimlib.lua")
+--include("animationsapi/boneanimlib.lua")
 
 include("sv_obj_player_extend.lua")
 
@@ -45,9 +51,9 @@ function GM:Think()
 
 	for _, pl in pairs(player.GetAll()) do
 		if pl:Alive() and pl:GetObserverMode() == OBS_MODE_NONE then
-			if CurTime() >= pl.NextHealthRegen and CurTime() >= pl.LastDamaged + 5 and pl:Health() < pl:GetMaxHealth() then
-				pl.NextHealthRegen = CurTime() + 0.5
-				pl:SetHealth(pl:Health() + 1)
+			if CurTime() >= pl.NextHealthRegen and CurTime() >= pl.LastDamaged + 1 and pl:Health() < pl:GetMaxHealth() then
+				pl.NextHealthRegen = CurTime() + 0.25
+				pl:SetHealth(math.min(pl:GetMaxHealth(), pl:Health() + 2))
 			end
 
 			pl:ThinkSelf()
@@ -156,6 +162,26 @@ function GM:IsSpawnpointSuitable(pl, spawnpointent, bMakeSuitable)
 	return true
 end
 
+local function SortSpawnDistToBallSpawn(a, b)
+	local home = GAMEMODE:GetBallHome()
+	return a:GetPos():DistToSqr(home) > b:GetPos():DistToSqr(home)
+end
+
+function GM:PlayerSelectTeamSpawn(teamid, pl)
+	local spawns = team.GetSpawnPoints(teamid)
+	if not spawns or #spawns == 0 then return pl end
+
+	table.sort(spawns, SortSpawnDistToBallSpawn)
+
+	for _, spawn in pairs(spawns) do
+		if self:IsSpawnpointSuitable(pl, spawn, true) then
+			return spawn
+		end
+	end
+
+	return spawns[#spawns]
+end
+
 function GM:CanPlayerSuicide(pl)
 	if not self:InRound() then return false end
 
@@ -196,11 +222,17 @@ function GM:PlayerSpawn(pl)
 
 	local teamid = pl:Team()
 
+	local modelname = player_manager.TranslatePlayerModel(pl:GetInfo("cl_playermodel"))
+	if not self.AllowedPlayerModels[modelname:lower()] then
+		modelname = teamid == TEAM_RED and "models/player/barney.mdl" or "models/player/breen.mdl"
+	end
+	pl:SetModel(modelname)
+
 	if teamid == TEAM_RED then
-		pl:SetModel("models/player/barney.mdl")
+		--pl:SetModel("models/player/barney.mdl")
 		pl:SetPlayerColor(Vector(2, 0, 0))
 	else
-		pl:SetModel("models/player/breen.mdl")
+		--pl:SetModel("models/player/breen.mdl")
 		pl:SetPlayerColor(Vector(0, 0, 1))
 	end
 
@@ -473,6 +505,8 @@ function GM:Initialize()
 	util.AddNetworkString("eft_overtime")
 
 	self:RegisterWeapons()
+
+	self:PrecacheResources()
 end
 
 function GM:EndWarmUp()
@@ -533,34 +567,61 @@ function GM:PlayerInitialSpawn(pl)
 
 	pl:SetCanWalk(false)
 	pl:SprintDisable()
-	pl:SetNoCollideWithTeammates(true)
-	pl:SetAvoidPlayers(true)
+	pl:SetNoCollideWithTeammates(false)
+	pl:SetAvoidPlayers(false)
 
 	pl.NextHealthRegen = 0
 	pl.LastDamaged = 0
+	pl.m_KnockdownImmunityGlobal = 0
+	pl.m_KnockdownImmunityChain = 0
+end
+
+function GM:OnPlayerChangedTeam(pl, teamid)
+	self.BaseClass.OnPlayerChangedTeam(self, pl, teamid)
+
+	pl:CollisionRulesChanged()
 end
 
 local NextSwitchFromTeamToSpec = {}
+local NumTeamJoins = {}
 function GM:PlayerCanJoinTeam(ply, teamid)
-	local TimeBetweenSwitches = GAMEMODE.SecondsBetweenTeamSwitches or 10
-	if ( ply.LastTeamSwitch and RealTime()-ply.LastTeamSwitch < TimeBetweenSwitches ) then
-		ply.LastTeamSwitch = ply.LastTeamSwitch + 1;
-		ply:ChatPrint( Format( "Please wait %i more seconds before trying to change team again", (TimeBetweenSwitches - (RealTime()-ply.LastTeamSwitch)) + 1 ) )
-		return false
-	end
-
-	if ply:Team() == TEAM_SPECTATOR and team.Joinable(teamid) then
-		local uid = ply:UniqueID()
-		if NextSwitchFromTeamToSpec[uid] and RealTime() < NextSwitchFromTeamToSpec[uid] then
-			ply:ChatPrint("You have recently started spectating and cannot rejoin the match so easily. Wait "..math.ceil(ply.NextSwitchFromTeamToSpec - RealTime()).." more seconds.")
-			return false
-		end
-	end
-
-	-- Already on this team!
-	if ( ply:Team() == teamid ) then
+	if ply:Team() == teamid then
 		ply:ChatPrint( "You're already on that team" )
 		return false
+	end
+
+	if ply.AutoJoiningTeam then return true end
+
+	local TimeBetweenSwitches = GAMEMODE.Competitive and 5 or GAMEMODE.SecondsBetweenTeamSwitches or 10
+	if ply.LastTeamSwitch and RealTime() - ply.LastTeamSwitch < TimeBetweenSwitches then
+		--ply.LastTeamSwitch = ply.LastTeamSwitch + 1
+		ply:ChatPrint( Format( "Please wait %i more seconds before trying to change team again", (TimeBetweenSwitches - (RealTime() - ply.LastTeamSwitch)) + 1 ) )
+		return false
+	end
+
+	if self.Competitive then return true end
+
+	if team.Joinable(teamid) then
+		local uid = ply:UniqueID()
+		if ply:Team() == TEAM_SPECTATOR then
+			if NextSwitchFromTeamToSpec[uid] and RealTime() < NextSwitchFromTeamToSpec[uid] then
+				ply:ChatPrint("You have recently started spectating and cannot rejoin the match so easily. Wait "..math.ceil(ply.NextSwitchFromTeamToSpec - RealTime()).." more seconds.")
+				return false
+			end
+		elseif ply:Team() ~= TEAM_UNASSIGNED then
+			if (NumTeamJoins[uid] or 0) > 2 then
+				ply:ChatPrint("You cannot swap teams anymore this match.")
+				return false
+			elseif GAMEMODE.AutomaticTeamBalance then
+				local nummyteam = team.NumPlayers(ply:Team())
+				local numotherteam = team.NumPlayers(teamid)
+
+				if nummyteam <= numotherteam then
+					ply:ChatPrint("You cannot swap teams because it would make them uneven.")
+					return false
+				end
+			end
+		end
 	end
 
 	return true
@@ -569,8 +630,14 @@ end
 function GM:OnPlayerChangedTeam(pl, oldteam, newteam)
 	self.BaseClass.OnPlayerChangedTeam(self, pl, oldteam, newteam)
 
-	if oldteam == TEAM_SPECTATOR and team.Joinable(newteam) then
-		NextSwitchFromTeamToSpec[pl:UniqueID()] = GAMEMODE.SecondsBetweenTeamSwitchesFromSpec
+	if team.Joinable(newteam) then
+		local uid = pl:UniqueID()
+
+		NumTeamJoins[uid] = (NumTeamJoins[uid] or 0) + 1
+
+		if oldteam == TEAM_SPECTATOR then
+			NextSwitchFromTeamToSpec[pl:UniqueID()] = GAMEMODE.SecondsBetweenTeamSwitchesFromSpec
+		end
 	end
 end
 
