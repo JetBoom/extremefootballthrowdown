@@ -567,8 +567,10 @@ function GM:PlayerInitialSpawn(pl)
 
 	pl:SetCanWalk(false)
 	pl:SprintDisable()
+	pl:SetCustomCollisionCheck(true)
 	pl:SetNoCollideWithTeammates(false)
 	pl:SetAvoidPlayers(false)
+	pl:CollisionRulesChanged()
 
 	pl.NextHealthRegen = 0
 	pl.LastDamaged = 0

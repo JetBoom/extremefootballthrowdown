@@ -49,7 +49,7 @@ function meta:SetStateBool2(bool) self:SetDTBool(1, bool) end
 function meta:SetCollisionMode(mode)
 	if mode ~= self:GetDTInt(3) then
 		self:SetDTInt(3, mode)
-		self:SetCustomCollisionCheck(mode > COLLISION_NORMAL)
+		--self:SetCustomCollisionCheck(mode > COLLISION_NORMAL)
 		self:CollisionRulesChanged()
 	end
 end
