@@ -1,4 +1,4 @@
-STATE.Time = 0.66
+STATE.Time = 0.4
 
 function STATE:NoSuicide(pl)
 	return true

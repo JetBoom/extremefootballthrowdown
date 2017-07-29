@@ -350,7 +350,7 @@ function GM:PlayerDeath(victim, inflictor, attacker)
 end
 
 function GM:DoPlayerDeath(pl, attacker, dmginfo)
-	pl:SetRespawnTime(attacker == pl and 6 or 3)
+	pl:SetRespawnTime(4)
 	pl:Extinguish()
 	pl:Freeze(false)
 

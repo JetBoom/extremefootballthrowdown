@@ -19,6 +19,8 @@ ENT.AttachmentAngles = Angle(90, 0, 0)
 
 ENT.MaxTurningAngle = 60
 
+ENT.GravityThrowMul = 0
+
 AccessorFuncDT(ENT, "Thrown", "Bool", 0)
 
 

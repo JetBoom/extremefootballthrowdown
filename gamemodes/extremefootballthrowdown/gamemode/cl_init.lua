@@ -395,6 +395,8 @@ function GM:Draw3DHUD()
 		self:Draw3DBallIndicator()
 	end
 
+	MySelf:CallStateFunction("PreDraw3DHUD")
+
 	cam.Start3D(EyePos(), EyeAngles(), 90)
 
 	if self.TieBreaker then
@@ -546,10 +548,12 @@ function GM:CreateFonts()
 		surface.CreateFont(name.."_shd", {font = face, size = size * SCALE3D2D_LARGE, weight = 0, antialias = true, shadow = false, outline = false, blursize = blursize_large})
 	end
 
-	surface.CreateFont("eft_3dstruggleicon",  {font = "coolvetica", size = 48, weight = 1000, antialias = true, shadow = false, outline = false})
-	surface.CreateFont("eft_3dstruggletext",  {font = "coolvetica", size = 24, weight = 0, antialias = true, shadow = false, outline = false})
-	surface.CreateFont("eft_3dpowertext",  {font = "coolvetica", size = 40, weight = 0, antialias = true, shadow = false, outline = false})
-	surface.CreateFont("eft_3dheadertext",  {font = "coolvetica", size = 72, weight = 500, antialias = true, shadow = false, outline = false})
+	surface.CreateFont("eft_3dstruggleicon", {font = "coolvetica", size = 48, weight = 1000, antialias = true, shadow = false, outline = false})
+	surface.CreateFont("eft_3dstruggleicon_shd", {font = "coolvetica", size = 48, weight = 1000, antialias = true, shadow = false, outline = false, blursize = 8})
+
+	surface.CreateFont("eft_3dstruggletext", {font = "coolvetica", size = 24, weight = 0, antialias = true, shadow = false, outline = false})
+	surface.CreateFont("eft_3dpowertext", {font = "coolvetica", size = 40, weight = 0, antialias = true, shadow = false, outline = false})
+	surface.CreateFont("eft_3dheadertext", {font = "coolvetica", size = 72, weight = 500, antialias = true, shadow = false, outline = false})
 
 	create("eft_3dhealthbar", 28)
 	create("eft_3dothernametext", 48)
@@ -563,8 +567,8 @@ function GM:CreateFonts()
 	create("eft_3dballtextsmall", 24)
 	create("eft_3dnotice", 40)
 
-	surface.CreateFont("eft_3dwinnertext",  {font = "coolvetica", size = 128, weight = 500, antialias = true, shadow = false, outline = false})
-	surface.CreateFont("eft_3djerseytext",  {font = "coolvetica", size = 64, weight = 500, antialias = true, shadow = false, outline = false})
+	surface.CreateFont("eft_3dwinnertext", {font = "coolvetica", size = 128, weight = 500, antialias = true, shadow = false, outline = false})
+	surface.CreateFont("eft_3djerseytext", {font = "coolvetica", size = 64, weight = 500, antialias = true, shadow = false, outline = false})
 end
 
 function GM:Initialize()
@@ -938,7 +942,7 @@ function GM:Draw3DHealthBar()
 	end
 
 	local camang = EyeAngles3D2D()
-	camang:RotateAroundAxis(camang:Right(), -30 + self.CameraYawLerp / 3 + math.sin(time) * 8)
+	camang:RotateAroundAxis(camang:Right(), -30 + self.CameraYawLerp / 3)
 
 	--render.PushFilterMin(TEXFILTER.ANISOTROPIC)
 	--render.PushFilterMag(TEXFILTER.ANISOTROPIC)
@@ -1063,6 +1067,9 @@ function GM:CalcView(pl, origin, angles, fov, znear, zfar)
 			if self.RoundEndCameraTime then
 				lerp = math.Clamp(RealTime() - self.RoundEndCameraTime, 0, 1) ^ 0.5
 			end
+
+			local carrier = viewent:GetCarrier()
+			if carrier and carrier:IsValid() then viewent = carrier end
 
 			origin:Set(viewent:LocalToWorld(viewent:OBBCenter()) * lerp + origin * (1 - lerp))
 
@@ -1276,7 +1283,7 @@ function GM:DrawMinimap()
 	end
 end
 
-function GM:DrawCrosshair()
+--[[function GM:DrawCrosshair()
 	local pl = LocalPlayer()
 	if not pl:IsValid() then return end
 
@@ -1314,7 +1321,7 @@ function GM:DrawCrosshair()
 
 	surface.SetDrawColor(255, 0, 0, 100)
 	surface.DrawRect(x - 8, y + pitchy * h - 4, 8, 4)
-end
+end]]
 
 function GM:AddScoreboardKills(ScoreBoard)
 	local f = function( ply ) return ply:Frags() end
@@ -1338,7 +1345,7 @@ end
 
 function GM:OnHUDPaint()
 	self:DrawMinimap()
-	self:DrawCrosshair()
+	--self:DrawCrosshair()
 
 	if #ScreenCracks == 0 then return end
 

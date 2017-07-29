@@ -17,7 +17,7 @@ TEAM_SPECTATE = TEAM_SPECTATOR
 MOVE_STOP = 0
 MOVE_OVERRIDE = 1
 
-GM.Help	= "Get the ball into the enemy goal.\n\nCharge into the other team's players to protect your team's ball carrier, or to stop an opposing ball carrier.\n\nYou speed up over time and lose speed for hitting things or changing directions quickly.\n\nPress left click to punch.\nPress right click while charging to dive tackle.\nPress and hold right click with the ball or an item to throw it.\nHold R to look behind you.\nPress ALT to ragdoll.\nStay still for a moment and hold CTRL to perform a high jump.\n\n- Ball Power Ups -\n\nBLITZ BALL = The ball combusts into flames, anybody caught in the path of a thrown blitz ball will be thrown aside themselves. Ball carriers with a blitz ball run slightly faster than normal.\n\nSPEED BALL = The ball carrier will have their running speed increased.\n\nWATER BALL = The ball carrier is able to run across water.\n\nICE BALL = Ball turns to ice, and slides across the ground when thrown."
+GM.Help	= "Get the ball in to the enemy goal.\n\nYou speed up over time and lose speed for hitting things or changing directions quickly.\n\nHold right click while going fast to ram.\nPress left click for melee attack/diving tackle.\nPress right click with the ball to throw it.\nPress ALT to dive.\nHold R to look behind you.\nHold CTRL + stay still to prepare a high jump."
 
 GM.TeamBased = true
 GM.AllowAutoTeam = true

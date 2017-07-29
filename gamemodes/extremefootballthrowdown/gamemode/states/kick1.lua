@@ -64,7 +64,7 @@ function STATE:Think(pl)
 	end
 end
 
-RegisterLuaAnimation('kick1', {
+--[[RegisterLuaAnimation('kick1', {
 	FrameData = {
 		{
 			BoneInfo = {
@@ -308,4 +308,4 @@ RegisterLuaAnimation('kick1', {
 	ShouldPlay = function(pl, sGestureName, tGestureTable, iCurFrame, tFrameData, fFrameDelta, fPower) -- This just automatically stops the sequence when it's done.
 		return iCurFrame < #tGestureTable.FrameData
 	end
-})
+})]]

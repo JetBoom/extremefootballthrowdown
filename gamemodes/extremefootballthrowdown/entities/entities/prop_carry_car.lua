@@ -15,6 +15,8 @@ ENT.BoneName = "ValveBiped.Bip01_R_Hand"
 ENT.AttachmentOffset = Vector(4, 4, 0)
 ENT.AttachmentAngles = Angle(90, 0, 90)
 
+ENT.GravityThrowMul = 0.4
+
 local RandomProps = {
 	Model("models/props_vehicles/carparts_axel01a.mdl"),
 	Model("models/props_vehicles/carparts_door01a.mdl"),

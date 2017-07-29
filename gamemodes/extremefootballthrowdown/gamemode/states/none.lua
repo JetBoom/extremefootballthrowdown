@@ -131,6 +131,7 @@ function STATE:Think(pl)
 				if myground and otherground and closespeed then
 					pl:SetState(STATE_POWERSTRUGGLE, nil, hitent)
 					hitent:SetState(STATE_POWERSTRUGGLE, nil, pl)
+
 					return
 				end
 

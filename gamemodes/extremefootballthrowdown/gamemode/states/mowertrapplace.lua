@@ -1,4 +1,4 @@
-STATE.Time = 1.2
+STATE.Time = 0.6
 
 function STATE:Started(pl, oldstate)
 	pl:ResetJumpPower(0)

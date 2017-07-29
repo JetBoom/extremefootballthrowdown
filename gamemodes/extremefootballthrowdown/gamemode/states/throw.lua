@@ -18,16 +18,9 @@ function STATE:Ended(pl, newstate)
 		if carrying.Drop then
 			local throwforce = self:GetThrowForce(pl)
 
-			local throwpos
-			if util.TraceLine({start = pl:GetPos() + Vector(0, 0, 4), endpos = pl:GetPos() + Vector(0, 0, pl:OBBMaxs().z + 4), mask = MASK_SOLID_BRUSHONLY}).Hit then
-				throwpos = pl:WorldSpaceCenter()
-			else
-				throwpos = pl:GetShootPos()
-			end
-
 			carrying:Drop(throwforce)
 			carrying:EmitSound("weapons/stinger_fire1.wav", 76, 100)
-			carrying:SetPos(throwpos)
+			carrying:SetPos(self:GetThrowPos(pl))
 
 			local phys = carrying:GetPhysicsObject()
 			if phys:IsValid() then
@@ -38,6 +31,14 @@ function STATE:Ended(pl, newstate)
 		end
 	end
 end
+end
+
+function STATE:GetThrowPos(pl)
+	if util.TraceLine({start = pl:GetPos() + Vector(0, 0, 4), endpos = pl:GetPos() + Vector(0, 0, pl:OBBMaxs().z + 4), mask = MASK_SOLID_BRUSHONLY}).Hit then
+		return pl:WorldSpaceCenter()
+	end
+
+	return pl:GetShootPos()
 end
 
 function STATE:GetThrowPower(pl)
@@ -129,7 +130,6 @@ function STATE:ShouldDrawAngleFinder()
 	return true
 end
 
-local color_black_alpha160 = Color(0, 0, 0, 160)
 function STATE:Draw3DHUD(pl)
 	local w, h = 400, 40
 	local x, y = w * -0.5, h * -0.5
@@ -156,4 +156,42 @@ function STATE:Draw3DHUD(pl)
 	cam.IgnoreZ(false)
 	--render.PopFilterMin()
 	--render.PopFilterMag()
+end
+
+local matTest = Material("effects/select_ring")
+local color_black_alpha160 = Color(0, 0, 0, 160)
+local trace = {mask = MASK_SOLID, filter = function(ent) return not ent:IsPlayer() end, mins = Vector(-6, -6, -6), maxs = Vector(6, 6, 6)}
+local step = 0.025
+function STATE:PreDraw3DHUD(pl)
+	local startpos = self:GetThrowPos(pl)
+	local v0 = self:GetThrowForce(pl) * pl:GetAimVector()
+	local carry = pl:GetCarrying()
+	local g = 300
+	local bt = CurTime() * -10
+	local tr, t1, size
+
+	if carry and carry:IsValid() and carry.GravityThrowMul then
+		g = g * carry.GravityThrowMul
+	end
+
+	render.SetMaterial(matTest)
+
+	for t0=0, 3, step do
+		t1 = t0 + step
+		trace.start = startpos + v0 * t0
+		trace.start.z = trace.start.z - g * t0 * t0
+		trace.endpos = startpos + v0 * t1
+		trace.endpos.z = trace.endpos.z - g * t1 * t1
+
+		tr = util.TraceHull(trace)
+
+		size = 9 + math.max(0, math.sin(bt + t0 * 4)) * 7
+
+		if tr.Hit then
+			render.DrawQuadEasy(tr.HitPos, tr.HitNormal, 48, 48, COLOR_RED)
+			break
+		else
+			render.DrawQuadEasy(tr.HitPos, tr.Normal, size, size, color_white)
+		end
+	end
 end
