@@ -4,7 +4,7 @@ STATE.NoWaterReturn = true
 
 if SERVER then
 	function STATE:Start(ball, samestate)
-		ball:EmitSound("vehicles/Airboat/pontoon_splash2.wav", 90, 100)
+		ball:EmitSound("vehicles/Airboat/pontoon_splash2.wav", 100, 100)
 
 		local phys = ball:GetPhysicsObject()
 		if phys:IsValid() then
@@ -13,7 +13,7 @@ if SERVER then
 	end
 
 	function STATE:End(ball)
-		ball:EmitSound("vehicles/Airboat/pontoon_impact_hard2.wav", 90, 150)
+		ball:EmitSound("vehicles/Airboat/pontoon_impact_hard2.wav", 100, 150)
 
 		local phys = ball:GetPhysicsObject()
 		if phys:IsValid() then

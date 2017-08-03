@@ -267,6 +267,8 @@ function GM:PlayerSpawn(pl)
 			pl:SetFlexWeight(i, math.Rand(0, 2))
 		end
 	end
+
+	pl:SetGravity(1)
 end
 
 function GM:SetupTieBreaker()

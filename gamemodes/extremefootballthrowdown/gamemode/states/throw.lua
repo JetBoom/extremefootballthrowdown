@@ -122,12 +122,8 @@ function STATE:GetCameraPos(pl, camerapos, origin, angles, fov, znear, zfar)
 	pl:ThirdPersonCamera(camerapos, origin, angles, fov, znear, zfar, pl:GetStateEnd() == 0 and math.Clamp((CurTime() - pl:GetStateStart()) / 0.2, 0, 1) or 1)
 end
 
-function STATE:ShouldDrawCrosshair()
-	return true
-end
-
-function STATE:ShouldDrawAngleFinder()
-	return true
+function STATE:HUDPaint(pl)
+	GAMEMODE:DrawAngleFinder()
 end
 
 function STATE:Draw3DHUD(pl)
@@ -160,7 +156,7 @@ end
 
 local matTest = Material("effects/select_ring")
 local color_black_alpha160 = Color(0, 0, 0, 160)
-local trace = {mask = MASK_SOLID, filter = function(ent) return not ent:IsPlayer() end, mins = Vector(-6, -6, -6), maxs = Vector(6, 6, 6)}
+local trace = {mask = MASK_SOLID_BRUSHONLY--[[, filter = function(ent) return not ent:IsPlayer() end]], mins = Vector(-6, -6, -6), maxs = Vector(6, 6, 6)}
 local step = 0.025
 function STATE:PreDraw3DHUD(pl)
 	local startpos = self:GetThrowPos(pl)

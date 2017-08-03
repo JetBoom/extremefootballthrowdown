@@ -135,10 +135,10 @@ function STATE:Think(pl)
 	local opp = self:GetOpponent(pl)
 	if not opp then
 		pl:EndState(true)
-	elseif opp:GetPos():Distance(pl:GetPos()) >= 128 then
+	elseif opp:GetPos():DistToSqr(pl:GetPos()) >= 16384 then
 		opp:EndState(true)
 		pl:EndState(true)
-	elseif CurTime() >= pl:GetStateStart() + self.Time then
+	elseif CurTime() >= pl:GetStateStart() + self.Time or opp:GetStateInteger() >= self.NumKeys or pl:GetStateInteger() >= self.NumKeys then
 		local opp = self:GetOpponent(pl)
 		if opp then
 			if opp:GetStateInteger() == pl:GetStateInteger() then

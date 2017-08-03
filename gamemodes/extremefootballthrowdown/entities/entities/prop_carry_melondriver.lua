@@ -43,35 +43,52 @@ function ENT:Move(pl, move)
 		move:SetMaxSpeed(move:GetMaxSpeed() * 0.7)
 		move:SetMaxClientSpeed(move:GetMaxClientSpeed() * 0.7)
 	else
-		move:SetMaxSpeed(0)
-		move:SetMaxClientSpeed(0)
-		move:SetForwardSpeed(0)
-		move:SetSideSpeed(0)
-		move:SetUpSpeed(0)
+		move:SetMaxSpeed(SPEED_ATTACK)
+		move:SetMaxClientSpeed(SPEED_ATTACK)
+
+		return MOVE_STOP
 	end
 end
 
-function ENT:CalcMainActivity(pl, velocity)
-	if self:GetFireTime() ~= 0 then
-		pl.CalcIdeal = pl:Crouching() and ACT_HL2MP_IDLE_CROUCH_RPG or ACT_HL2MP_IDLE_RPG
-		pl.CalcSeqOverride = -1
-	elseif not pl:OnGround() then
-		pl.CalcIdeal = ACT_HL2MP_JUMP_RPG
-		pl.CalcSeqOverride = -1
-	elseif pl:Crouching() then
-		if velocity:Length() > 0.5 then
-			pl.CalcIdeal = ACT_HL2MP_WALK_CROUCH_RPG
-			pl.CalcSeqOverride = -1
-		else
-			pl.CalcIdeal = ACT_HL2MP_IDLE_CROUCH_RPG
-			pl.CalcSeqOverride = -1
-		end
-	elseif velocity:Length() > 0.5 then
-		pl.CalcIdeal = ACT_HL2MP_RUN_PASSIVE
-		pl.CalcSeqOverride = -1
+local Translated = {
+	[ACT_MP_RUN] = ACT_HL2MP_RUN_PASSIVE,
+
+	[ACT_HL2MP_WALK_SUITCASE] = ACT_HL2MP_WALK_PASSIVE,
+	[ACT_MP_WALK] = ACT_HL2MP_WALK_PASSIVE,
+
+	[ACT_MP_CROUCH_IDLE] = ACT_HL2MP_IDLE_CROUCH_RPG,
+
+	[ACT_MP_CROUCHWALK] = ACT_HL2MP_WALK_CROUCH_PASSIVE,
+
+	[ACT_HL2MP_IDLE_MELEE_ANGRY] = ACT_HL2MP_IDLE_PASSIVE,
+	[ACT_HL2MP_IDLE_ANGRY] = ACT_HL2MP_IDLE_PASSIVE,
+
+	[ACT_MP_JUMP] = ACT_HL2MP_JUMP_PASSIVE,
+
+	[ACT_MP_SWIM] = ACT_HL2MP_SWIM_PASSIVE
+}
+local TranslatedFiring = {
+	[ACT_MP_RUN] = ACT_HL2MP_RUN_RPG,
+
+	[ACT_HL2MP_WALK_SUITCASE] = ACT_HL2MP_WALK_RPG,
+	[ACT_MP_WALK] = ACT_HL2MP_WALK_RPG,
+
+	[ACT_MP_CROUCH_IDLE] = ACT_HL2MP_IDLE_CROUCH_RPG,
+
+	[ACT_MP_CROUCHWALK] = ACT_HL2MP_WALK_CROUCH_RPG,
+
+	[ACT_HL2MP_IDLE_MELEE_ANGRY] = ACT_HL2MP_IDLE_RPG,
+	[ACT_HL2MP_IDLE_ANGRY] = ACT_HL2MP_IDLE_RPG,
+
+	[ACT_MP_JUMP] = ACT_HL2MP_JUMP_RPG,
+
+	[ACT_MP_SWIM] = ACT_HL2MP_SWIM_RPG
+}
+function ENT:TranslateActivity(pl)
+	if self:GetFireTime() == 0 then
+		pl.CalcIdeal = Translated[pl.CalcIdeal] or pl.CalcIdeal
 	else
-		pl.CalcIdeal = ACT_HL2MP_IDLE_PASSIVE
-		pl.CalcSeqOverride = -1
+		pl.CalcIdeal = TranslatedFiring[pl.CalcIdeal] or pl.CalcIdeal
 	end
 end
 
@@ -199,8 +216,10 @@ function ENT:DrawTranslucent()
 	render.DrawQuadEasy(pos, dir * -1, size, size, color_white, rot)
 end
 
-function ENT:ShouldDrawCrosshair()
-	return self:GetFireTime() ~= 0
+function ENT:HUDPaint(pl)
+	if self:GetFireTime() ~= 0 then
+		GAMEMODE:DrawCrosshair()
+	end
 end
 
 function ENT:GetCameraPos(pl, camerapos, origin, angles, fov, znear, zfar)

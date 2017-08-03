@@ -49,7 +49,7 @@ end
 
 if SERVER then
 function STATE:Think(pl)
-	if pl:OnGround() then
+	if pl:OnGround() or pl:IsSwimming() then
 		if pl:IsCarryingBall() then
 			pl:EndState()
 			pl:SetLocalVelocity(pl:GetVelocity() * 0.5)

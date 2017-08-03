@@ -7,10 +7,10 @@ ENT.Name = "Arcane Wand"
 
 ENT.IsPropWeapon = true
 
-ENT.DropChance = 0.8
+ENT.DropChance = 0.75
 
 ENT.Model = Model("models/weapons/w_stunbaton.mdl")
-ENT.ThrowForce = 900
+ENT.ThrowForce = 1000
 
 ENT.BoneName = "ValveBiped.Bip01_R_Hand"
 ENT.AttachmentOffset = Vector(4, 1, -7.5)
@@ -39,8 +39,64 @@ function ENT:SecondaryAttack(pl)
 end
 
 function ENT:Move(pl, move)
-	move:SetMaxSpeed(move:GetMaxSpeed() * 0.65)
-	move:SetMaxClientSpeed(move:GetMaxClientSpeed() * 0.65)
+	if pl:GetState() == STATE_ARCANEWANDATTACK then
+		move:SetMaxSpeed(SPEED_ATTACK)
+		move:SetMaxClientSpeed(SPEED_ATTACK)
+
+		return MOVE_STOP
+	end
+
+	move:SetMaxSpeed(move:GetMaxSpeed() * 0.7)
+	move:SetMaxClientSpeed(move:GetMaxClientSpeed() * 0.7)
+end
+
+local Translated = {
+	[ACT_MP_RUN] = ACT_HL2MP_RUN_SLAM,
+
+	[ACT_HL2MP_WALK_SUITCASE] = ACT_HL2MP_WALK_SLAM,
+	[ACT_MP_WALK] = ACT_HL2MP_WALK_SLAM,
+
+	[ACT_MP_CROUCH_IDLE] = ACT_HL2MP_IDLE_CROUCH_SLAM,
+
+	[ACT_MP_CROUCHWALK] = ACT_HL2MP_WALK_CROUCH_SLAM,
+
+	[ACT_HL2MP_IDLE_MELEE_ANGRY] = ACT_HL2MP_IDLE_SLAM,
+	[ACT_HL2MP_IDLE_ANGRY] = ACT_HL2MP_IDLE_SLAM,
+
+	[ACT_MP_JUMP] = ACT_HL2MP_JUMP_SLAM,
+
+	[ACT_MP_SWIM] = ACT_HL2MP_SWIM_SLAM
+}
+local TranslatedFiring = {
+	[ACT_MP_RUN] = ACT_HL2MP_RUN_GRENADE,
+
+	[ACT_HL2MP_WALK_SUITCASE] = ACT_HL2MP_WALK_GRENADE,
+	[ACT_MP_WALK] = ACT_HL2MP_WALK_GRENADE,
+
+	[ACT_MP_CROUCH_IDLE] = ACT_HL2MP_IDLE_CROUCH_GRENADE,
+
+	[ACT_MP_CROUCHWALK] = ACT_HL2MP_WALK_CROUCH_GRENADE,
+
+	[ACT_HL2MP_IDLE_MELEE_ANGRY] = ACT_HL2MP_IDLE_GRENADE,
+	[ACT_HL2MP_IDLE_ANGRY] = ACT_HL2MP_IDLE_GRENADE,
+
+	[ACT_MP_JUMP] = ACT_HL2MP_JUMP_GRENADE,
+
+	[ACT_MP_SWIM] = ACT_HL2MP_SWIM_GRENADE
+}
+function ENT:TranslateActivity(pl)
+	if pl:GetState() == STATE_ARCANEWANDATTACK or CurTime() < self:GetDTFloat(5) then
+		pl.CalcIdeal = TranslatedFiring[pl.CalcIdeal] or pl.CalcIdeal
+	else
+		pl.CalcIdeal = Translated[pl.CalcIdeal] or pl.CalcIdeal
+	end
+end
+
+function ENT:DoAnimationEvent(pl, event, data)
+	if event == PLAYERANIMEVENT_ATTACK_PRIMARY then
+		pl:AnimRestartGesture(GESTURE_SLOT_ATTACK_AND_RELOAD, ACT_HL2MP_GESTURE_RANGE_ATTACK_GRENADE, true)
+		return ACT_INVALID
+	end
 end
 
 if SERVER then

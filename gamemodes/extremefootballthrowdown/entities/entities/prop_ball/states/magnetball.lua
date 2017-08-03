@@ -2,13 +2,13 @@ STATE.Name = "Magnet Ball"
 
 if SERVER then
 	function STATE:Start(ball, samestate)
-		ball:EmitSound("vehicles/Crane/crane_magnet_switchon.wav", 90, 120)
+		ball:EmitSound("vehicles/Crane/crane_magnet_switchon.wav", 100, 120)
 		ball:SetStateVector(vector_origin)
 		ball:SetStateEntity(NULL)
 	end
 
 	function STATE:End(ball)
-		ball:EmitSound("npc/barnacle/barnacle_die1.wav", 90, 100)
+		ball:EmitSound("npc/barnacle/barnacle_die1.wav", 100, 100)
 	end
 
 	function STATE:PhysicsCollide(ball, data, phys)

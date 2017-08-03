@@ -1283,12 +1283,7 @@ function GM:DrawMinimap()
 	end
 end
 
---[[function GM:DrawCrosshair()
-	local pl = LocalPlayer()
-	if not pl:IsValid() then return end
-
-	if not pl:CallCarryFunction("ShouldDrawCrosshair") and not pl:CallStateFunction("ShouldDrawCrosshair") then return end
-
+function GM:DrawCrosshair()
 	local w, h = ScrW(), ScrH()
 	local x, y = w / 2, h /2
 	local screenscale = math.Clamp(h / 1080, 0.5, 1)
@@ -1302,12 +1297,15 @@ end
 
 		size = size * 1.25
 	end
+end
 
-	if not (wep and wep:IsValid() and wep.ShouldDrawAngleFinder and wep:ShouldDrawAngleFinder() or pl:CallStateFunction("ShouldDrawAngleFinder")) then return end
-
-	local pitch = pl:EyeAngles().pitch
+function GM:DrawAngleFinder()
+	local w, h = ScrW(), ScrH()
+	local pitch = LocalPlayer():EyeAngles().pitch
 	local pitchy = pitch / 180
-	x = x + size / 2 + 16
+	local x = w / 2 + math.Clamp(h / 1080, 0.5, 1) * 32 + 16
+	local y = h / 2
+
 	h = h / 4
 
 	surface.SetDrawColor(255, 255, 255, 60)
@@ -1321,11 +1319,11 @@ end
 
 	surface.SetDrawColor(255, 0, 0, 100)
 	surface.DrawRect(x - 8, y + pitchy * h - 4, 8, 4)
-end]]
+end
 
+local sort_func = function(ply) return ply:Frags() end
 function GM:AddScoreboardKills(ScoreBoard)
-	local f = function( ply ) return ply:Frags() end
-	ScoreBoard:AddColumn("Score", 80, f, 0.5, nil, 6, 6)
+	ScoreBoard:AddColumn("Score", 80, sort_func, 0.5, nil, 6, 6)
 end
 
 local matScreenCrack = CreateMaterial("eft_screencrack", "UnlitGeneric", {
@@ -1345,12 +1343,20 @@ end
 
 function GM:OnHUDPaint()
 	self:DrawMinimap()
-	--self:DrawCrosshair()
+	self:DrawScreenCracks()
 
+	local lp = LocalPlayer()
+	if lp:IsValid() then
+		lp:CallStateFunction("HUDPaint")
+		lp:CallCarryFunction("HUDPaint")
+	end
+end
+
+function GM:DrawScreenCracks()
 	if #ScreenCracks == 0 then return end
 
-	local time = CurTime()
 	local w, h = ScrW(), ScrH()
+	local time = CurTime()
 
 	surface.SetMaterial(matScreenCrack)
 	local done = true

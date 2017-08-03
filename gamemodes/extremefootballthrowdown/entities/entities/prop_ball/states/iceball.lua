@@ -2,17 +2,17 @@ STATE.Name = "Ice Ball"
 
 if SERVER then
 	function STATE:Start(ball, samestate)
-		ball:EmitSound("vehicles/Airboat/pontoon_splash2.wav", 90, 100)
+		ball:EmitSound("vehicles/Airboat/pontoon_splash2.wav", 100, 110)
 	end
 
 	function STATE:End(ball)
-		ball:EmitSound("vehicles/Airboat/pontoon_impact_hard2.wav", 90, 150)
+		ball:EmitSound("vehicles/Airboat/pontoon_impact_hard2.wav", 100, 170)
 	end
 
 	function STATE:PhysicsCollide(ball, hitdata, phys)
 		if hitdata.Speed > 250 then
 			local ent = ents.Create("effect_iceballimpact")
-			
+
 			ang = hitdata.HitNormal:Angle()
 
 			if ent:IsValid() then
@@ -22,7 +22,7 @@ if SERVER then
 				ent:Spawn()
 			end
 		end
-		phys:SetVelocityInstantaneous(Vector(hitdata.OurOldVelocity.x*0.97,hitdata.OurOldVelocity.y*0.97,hitdata.OurOldVelocity.z*-0.3))	
+		phys:SetVelocityInstantaneous(Vector(hitdata.OurOldVelocity.x*0.97,hitdata.OurOldVelocity.y*0.97,hitdata.OurOldVelocity.z*-0.3))
 		return true
 	end
 end

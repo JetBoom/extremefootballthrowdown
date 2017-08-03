@@ -1,33 +1,16 @@
-STATE.Name = "Feather Ball"
+STATE.Name = "Gravity Ball"
 
 if SERVER then
 	local function AddEffect(carrier)
-		carrier:SetGravity(0.25)
-
-		for _, ent in pairs(ents.FindByClass("status_featherballwings")) do
-			if ent:GetOwner() == carrier then return end
-		end
-		local ent = ents.Create("status_featherballwings")
-		if ent:IsValid() then
-			ent:SetPos(carrier:WorldSpaceCenter())
-			ent:SetOwner(carrier)
-			ent:SetParent(carrier)
-			ent:Spawn()
-		end
+		carrier:SetGravity(0.5)
 	end
 
 	local function RemoveEffect(carrier)
 		carrier:SetGravity(1)
-
-		for _, ent in pairs(ents.FindByClass("status_featherballwings")) do
-			if ent:GetOwner() == carrier then
-				ent:Remove()
-			end
-		end
 	end
 
 	function STATE:Start(ball, samestate)
-		ball:EmitSound("npc/attack_helicopter/aheli_charge_up.wav", 100, 100)
+		ball:EmitSound("buttons/button1.wav", 100, 40)
 
 		local carrier = ball:GetCarrier()
 		if carrier:IsValid() then
@@ -36,7 +19,7 @@ if SERVER then
 	end
 
 	function STATE:End(ball)
-		ball:EmitSound("npc/barnacle/barnacle_die1.wav", 100, 100)
+		ball:EmitSound("ambient/machines/machine1_hit2.wav", 100, 100)
 
 		local carrier = ball:GetCarrier()
 		if carrier:IsValid() then
@@ -55,14 +38,38 @@ if SERVER then
 	end
 end
 
+local colBall = Color(100, 0, 205)
 function STATE:GetBallColor(ball, carrier)
-	return color_white
+	return colBall
 end
 
 if not CLIENT then return end
 
 local vecGravity = Vector(0, 0, 300)
+local matRefraction	= Material("refract_ring")
 function STATE:PostDraw(ball)
+	local carrier = ball:GetCarrier()
+	if carrier:IsValid() then
+		local vel = carrier:GetVelocity()
+		local speed = vel:Length()
+		if speed > 170 then
+			local dir = vel:GetNormalized() * -1
+			local intensity = math.Clamp((speed - 300) / 125, 0, 1) ^ 2
+
+			matRefraction:SetFloat("$refractamount", intensity * 0.05 + math.abs(math.sin(CurTime())) * 0.05)
+			render.SetMaterial(matRefraction)
+			render.UpdateRefractTexture()
+
+			local baserot = (CurTime() * 600) % 360
+			for i=1, 8 do
+				local pos = carrier:GetPos() + carrier:GetUp() * carrier:OBBCenter().z + 16 * i * dir
+				local rot = baserot + i * 90
+				local size = 72 - i * 2
+				render.DrawQuadEasy(pos, dir, size, size, color_white, rot)
+				render.DrawQuadEasy(pos, dir * -1, size, size, color_white, rot)
+			end
+		end
+	end
 	if CurTime() < ball.NextStateEmit then return end
 	ball.NextStateEmit = CurTime() + 0.01
 
@@ -73,7 +80,7 @@ function STATE:PostDraw(ball)
 	local emitter = ParticleEmitter(pos)
 	emitter:SetNearClip(16, 24)
 
-	local particle = emitter:Add("sprites/glow04_noz", ball:GetPos())
+	local particle = emitter:Add("Effects/yellowflare", ball:GetPos())
 	particle:SetDieTime(math.Rand(1.7, 2.5))
 	particle:SetStartSize(8)
 	particle:SetEndSize(4)
@@ -87,6 +94,7 @@ function STATE:PostDraw(ball)
 	particle:SetRoll(math.Rand(0, 360))
 	particle:SetRollDelta(math.Rand(-15, 15))
 	particle:SetGravity(vecGravity)
+	particle:SetColor(100, 0, 205)
 
 	emitter:Finish()
 end
