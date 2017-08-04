@@ -255,6 +255,23 @@ function STATE:Draw3DHUD(pl)
 	cam.IgnoreZ(false)
 	--render.PopFilterMin()
 	--render.PopFilterMag()
+	
+	camang = EyeAngles3D2D()
+	camang:RotateAroundAxis(camang:Right(), GAMEMODE.CameraYawLerp / 3)
+	camang:RotateAroundAxis(camang:Forward(), -15)
+
+	--render.PushFilterMin(TEXFILTER.ANISOTROPIC)
+	--render.PushFilterMag(TEXFILTER.ANISOTROPIC)
+	cam.IgnoreZ(true)
+	cam.Start3D2D(EyePos3D2DScreen(0, -256), camang, 1)
+
+	draw.SimpleText("PRESS ["..(input.LookupBinding("+attack2") or "SECONDARY ATTACK").."] TO SUBMIT!", "eft_3dheadertext", 0, 0 --[[h / 2]], colActive, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+
+
+	cam.End3D2D()
+	cam.IgnoreZ(false)
+	--render.PopFilterMin()
+	--render.PopFilterMag()
 
 
 	camang = EyeAngles3D2D()
