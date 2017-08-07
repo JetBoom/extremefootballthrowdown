@@ -265,7 +265,7 @@ function STATE:Draw3DHUD(pl)
 	cam.IgnoreZ(true)
 	cam.Start3D2D(EyePos3D2DScreen(0, -256), camang, 1)
 
-	draw.SimpleText("PRESS ["..(input.LookupBinding("+attack2") or "SECONDARY ATTACK").."] TO SUBMIT!", "eft_3dheadertext", 0, 0 --[[h / 2]], colActive, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+	draw.SimpleText("PRESS ["..(input.LookupBinding("+attack2") or "SECONDARY ATTACK").."] TO QUIT!", "eft_3dheadertext", 0, 0 --[[h / 2]], colActive, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 
 
 	cam.End3D2D()
