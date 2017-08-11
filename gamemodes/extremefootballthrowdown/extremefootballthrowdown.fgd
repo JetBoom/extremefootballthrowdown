@@ -90,6 +90,14 @@
 [
 ]
 
+@PointClass base(Targetname) studio("models/maxofs2d/hover_rings.mdl") color( 255 255 255 )   = prop_carry_gravityorb : "EFT: Spawns a Gravity Orb."
+[
+]
+
+@PointClass base(Targetname) studio("models/weapons/w_grenade.mdl") color( 255 255 255 )   = prop_carry_smokebomb : "EFT: Spawns a Smoke Bomb."
+[
+]
+
 @PointClass base(Angles,EFTGoal) = prop_goal : "EFT: Where the boring, basic goal spawns."
 [
 ]
@@ -232,6 +240,7 @@
 		"magnetball" : "Magnet Ball"
 		"scoreball"  : "Score Ball"
 		"iceball"    : "Ice Ball"
+		"gravityball": "Gravity Ball"
 	]
 	poweruptime(integer) : "Powerup Time" : 20 : "How long the ball is powered up."
 	
