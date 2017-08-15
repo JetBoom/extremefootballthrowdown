@@ -124,6 +124,10 @@ end
 
 function STATE:HUDPaint(pl)
 	GAMEMODE:DrawAngleFinder()
+
+	if GAMEMODE.ThrowingGuide and not GAMEMODE:IsCompetitive() then
+		GAMEMODE:DrawCrosshair()
+	end
 end
 
 function STATE:Draw3DHUD(pl)
