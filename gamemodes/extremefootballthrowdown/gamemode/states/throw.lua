@@ -159,6 +159,8 @@ local color_black_alpha160 = Color(0, 0, 0, 160)
 local trace = {mask = MASK_SOLID_BRUSHONLY--[[, filter = function(ent) return not ent:IsPlayer() end]], mins = Vector(-6, -6, -6), maxs = Vector(6, 6, 6)}
 local step = 0.025
 function STATE:PreDraw3DHUD(pl)
+	if not GAMEMODE.ThrowingGuide or GAMEMODE:IsCompetitive() then return end
+
 	local startpos = self:GetThrowPos(pl)
 	local v0 = self:GetThrowForce(pl) * pl:GetAimVector()
 	local carry = pl:GetCarrying()

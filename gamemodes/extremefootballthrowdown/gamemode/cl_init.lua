@@ -38,13 +38,18 @@ local SCALE3D2D_LARGE = SCALE3D2D_LARGE
 local SCALE3D2D_LARGEI = SCALE3D2D_LARGEI
 local bit_band = bit.band
 local MOVETYPE_WALK = MOVETYPE_WALK
-local IN_DUCK = IN_DUCK
+--local IN_DUCK = IN_DUCK
 local ScrH = ScrH
 local math_max = math.max
 local math_min = math.min
 
 local tempColRed = Color(1, 1, 1)
 local tempColBlue = Color(1, 1, 1)
+
+GM.ThrowingGuide = CreateClientConVar("eft_throwingguide", "1", true, false):GetBool()
+cvars.AddChangeCallback("eft_throwingguide", function(cvar, oldvalue, newvalue)
+	GAMEMODE.ThrowingGuide = tonumber(newvalue) == 1
+end)
 
 MySelf = MySelf or NULL
 hook.Add("InitPostEntity", "GetLocal", function()
@@ -108,9 +113,9 @@ function GM:_CreateMove(cmd)
 	end
 
 	-- Prevent ducking unless on the ground or swimming.
-	if bit_band(cmd:GetButtons(), IN_DUCK) ~= 0 and MySelf:GetMoveType() == MOVETYPE_WALK and not MySelf:OnGround() and not MySelf:IsSwimming() and MySelf:Alive() then
+	--[[if bit_band(cmd:GetButtons(), IN_DUCK) ~= 0 and MySelf:GetMoveType() == MOVETYPE_WALK and not MySelf:OnGround() and not MySelf:IsSwimming() and MySelf:Alive() then
 		cmd:SetButtons(cmd:GetButtons() - IN_DUCK)
-	end
+	end]]
 
 	local ang = cmd:GetViewAngles()
 

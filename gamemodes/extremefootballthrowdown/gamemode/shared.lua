@@ -168,6 +168,7 @@ local E_IsValid = M_Entity.IsValid
 local E_GetPos = M_Entity.GetPos
 local M_SetVelocity = M_CMoveData.SetVelocity
 local M_GetVelocity = M_CMoveData.GetVelocity
+local M_GetMaxSpeed = M_CMoveData.GetMaxSpeed
 
 function GM:InRound() return GetGlobalBool("InRound", true) end
 
@@ -318,6 +319,8 @@ function GM:GetFallDamage(pl, speed)
 end
 
 function GM:Move(pl, move)
+	E_GetTable(pl).pgs = nil
+
 	if not pl:Alive() then return end
 
 	local nextvel = pl:GetNextMoveVelocity()
@@ -347,6 +350,8 @@ function GM:Move(pl, move)
 		else
 			self:DefaultMove(pl, move)
 		end
+
+		E_GetTable(pl).pgs = move:GetMaxSpeed()
 	else
 		--move:SetMaxSpeed(move:GetMaxSpeed() * 0.2)
 		move:SetMaxClientSpeed(move:GetMaxClientSpeed() * 0.2)
@@ -358,18 +363,24 @@ function GM:Move(pl, move)
 	end
 end
 
-local pt, vel, mode, avoid, trig
+local pt, vel, mode, avoid, trig, max_speed
 function GM:FinishMove(pl, move)
 	pt = E_GetTable(pl)
 
 	-- Simple anti bunny hopping. Flag is set in OnPlayerHitGround
-	if pt.LandSlow then
-		pt.LandSlow = false
+	if pt.Landed then
+		pt.Landed = false
 
-		vel = M_GetVelocity(move)
-		vel.x = vel.x * 0.85
-		vel.y = vel.y * 0.85
-		M_SetVelocity(move, vel)
+		max_speed = E_GetTable(pl).pgs
+		if max_speed then
+			vel = M_GetVelocity(move)
+			if vel:Length2DSqr() >= max_speed * max_speed * 1.05 then
+				vel.x = vel.x * 0.85
+				vel.y = vel.y * 0.85
+
+				M_SetVelocity(move, vel)
+			end
+		end
 	end
 
 	mode = P_GetCollisionMode(pl)
@@ -529,7 +540,7 @@ function GM:OnPlayerHitGround(pl, inwater, hitfloater, speed)
 	if inwater then return true end
 
 	if speed > 64 then
-		pl.LandSlow = true
+		pl.Landed = true
 	end
 
 	if SERVER then
