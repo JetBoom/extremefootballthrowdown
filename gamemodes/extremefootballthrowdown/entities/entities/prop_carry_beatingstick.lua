@@ -11,8 +11,8 @@ ENT.Model = Model("models/weapons/w_stunbaton.mdl")
 ENT.ThrowForce = 850
 
 ENT.BoneName = "ValveBiped.Bip01_R_Hand"
-ENT.AttachmentOffset = Vector(4, 1, -15)
-ENT.AttachmentAngles = Angle(90, 180, 0)
+ENT.AttachmentOffset = Vector(4.5, 1.5, -15)
+ENT.AttachmentAngles = Angle(80, 180, 10)
 
 ENT.Mass = 40
 
