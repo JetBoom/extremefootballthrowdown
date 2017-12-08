@@ -18,6 +18,7 @@ function ENT:Initialize()
 			owner:SetState(STATE_SPINNYKNOCKDOWN, STATES[STATE_SPINNYKNOCKDOWN].Time)
 			owner:SetGroundEntity(NULL)
 			owner:SetVelocity(Vector(0, 0, 32))
+			owner:SetDSP(23)
 		end
 
 		self:SetDieTime(CurTime() + self.LifeTime)
@@ -35,6 +36,7 @@ function ENT:OnRemove()
 	local owner = self:GetParent()
 	if owner:IsValid() then
 		owner:SetGravity(1)
+		owner:SetDSP(0)
 	end
 end
 end

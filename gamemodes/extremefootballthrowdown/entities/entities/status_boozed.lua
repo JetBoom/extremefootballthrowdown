@@ -27,9 +27,15 @@ if SERVER then
 function ENT:Think()
 	local owner = self:GetOwner()
 	if not owner:IsValid() or not owner:Alive() or CurTime() >= self:GetDieTime() then self:Remove() end
+	owner:SetDSP(7)
 
 	self:NextThink(CurTime())
 	return true
+end
+
+function ENT:OnRemove()
+	local owner = self:GetOwner()
+	owner:SetDSP(0)
 end
 end
 
