@@ -79,6 +79,14 @@ function ENT:Explode(hitpos, hitnormal)
 		effectdata:SetOrigin(hitpos)
 		effectdata:SetNormal(hitnormal)
 	util.Effect("exp_smokebomb", effectdata)
+	
+	local ball = GAMEMODE:GetBall()
+	if ball:IsValid() and ball:GetState() == BALL_STATE_BLITZBALL then
+		local nearest = ball:NearestPoint(hitpos)
+		if nearest:DistToSqr(hitpos) <= 40000 and util.IsVisible(nearest, hitpos) then
+			ball:SetState(BALL_STATE_NONE)
+		end
+	end
 end
 
 function ENT:OnTouch(ent)
