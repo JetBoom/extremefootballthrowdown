@@ -2,7 +2,17 @@ STATE.Time = 0.75
 
 function STATE:Started(pl, oldstate)
 	pl:ResetJumpPower(0)
+	
+	pl:DoAttackEvent()
+	pl:SetStateBool(false)
 end
+
+function STATE:Ended(pl, newstate)
+	if newstate ~= STATE_NONE or not pl:GetCarry():IsValid() or pl:GetCarry():GetClass() ~= "prop_carry_trashbin" then return end
+
+	pl:DoAttackEvent()
+end
+
 
 --[[if SERVER then
 function STATE:Ended(pl, newstate)
@@ -37,10 +47,7 @@ function STATE:IsIdle(pl)
 end
 
 function STATE:Move(pl, move)
-	move:SetSideSpeed(0)
-	move:SetForwardSpeed(0)
-	move:SetMaxSpeed(0)
-	move:SetMaxClientSpeed(0)
+	move:SetMaxClientSpeed(SPEED_ATTACK)
 
 	return MOVE_STOP
 end
@@ -83,7 +90,7 @@ function STATE:ThinkCompensatable(pl)
 	end
 end
 
-function STATE:CalcMainActivity(pl, velocity)
+--[[function STATE:CalcMainActivity(pl, velocity)
 	pl.CalcSeqOverride = pl:LookupSequence("seq_preskewer")
 end
 
@@ -92,4 +99,4 @@ function STATE:UpdateAnimation(pl, velocity, maxseqgroundspeed)
 	pl:SetPlaybackRate(0)
 
 	return true
-end
+end]]
