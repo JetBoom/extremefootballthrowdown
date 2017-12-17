@@ -5,7 +5,8 @@ include("shared.lua")
 
 function ENT:Touch(ent)
 	if (self.EndTime) <= CurTime() then return end
-	if ent:IsPlayer() then
+	local ball = GAMEMODE:GetBall()
+	if ent:IsPlayer() and ent:Team() ~= ball:GetLastCarrierTeam() then
 		local AlreadyBoozed = false
 		for __, v in pairs(ents.FindByClass("status_boozed")) do
 			if v:GetOwner() == ent then AlreadyBoozed = true break end
