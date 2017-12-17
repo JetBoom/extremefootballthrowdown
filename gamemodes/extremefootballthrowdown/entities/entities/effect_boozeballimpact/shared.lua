@@ -1,7 +1,10 @@
 ENT.Type = "anim"
-ENT.RenderGroup = RENDERGROUP_TRANSLUCENT
+ENT.RenderGroup = RENDERGROUP_OTHER
 
 ENT.m_IsProjectile = true
+
+AccessorFuncDT(ENT, "Player", "Entity", 0)
+AccessorFuncDT(ENT, "Team", "Int", 0)
 
 function ENT:Think()
 	if not self.Played and CLIENT then
@@ -39,12 +42,8 @@ function ENT:Initialize()
 		end
 
 	end
-
 	
 	self.MaxScale = self:GetModelScale()
 	self.MaxScaleTime = CurTime()
 	self.EndTime = CurTime() + 0.2
-	
-	self:SetRenderMode(RENDERMODE_TRANSALPHA)
-	
 end
