@@ -67,7 +67,7 @@ function STATE:Move(pl, move)
 	return MOVE_STOP
 end
 
-function STATE:ThinkCompensatable(pl)
+function STATE:Think(pl)
 	if not pl:IsOnGround() and not pl:IsSwimming() then
 		pl:EndState(true)
 	elseif CurTime() >= pl:GetStateStart() + self.HitTime then
