@@ -66,10 +66,7 @@ function STATE:IsIdle(pl)
 end
 
 function STATE:Move(pl, move)
-	move:SetSideSpeed(0)
-	move:SetForwardSpeed(0)
-	move:SetMaxSpeed(0)
-	move:SetMaxClientSpeed(0)
+	move:SetMaxClientSpeed(SPEED_THROW)
 
 	return MOVE_STOP
 end
