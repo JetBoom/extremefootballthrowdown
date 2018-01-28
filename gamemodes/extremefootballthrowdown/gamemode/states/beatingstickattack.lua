@@ -74,7 +74,7 @@ function STATE:HitEntity(pl, hitent, tr, spinny)
 	util.Effect("hit_beatingstick", effectdata, true, true)
 end
 
-function STATE:ThinkCompensatable(pl)
+function STATE:Think(pl)
 	if not pl:IsOnGround() and not pl:IsSwimming() then
 		pl:EndState(true)
 	elseif not pl:GetStateBool() and CurTime() >= pl:GetStateStart() + self.HitTime then
