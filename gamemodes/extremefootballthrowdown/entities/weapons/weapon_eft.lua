@@ -56,11 +56,17 @@ function SWEP:SecondaryAttack()
 	if owner:CallCarryFunction("SecondaryAttack") then return end
 
 	if owner:CanMelee() then
+		local state = STATE_DIVETACKLE
 		local vel = owner:GetVelocity()
 		local dir = vel:GetNormalized()
 		local speed = vel:Length() * dir:Dot(owner:GetForward())
 		if speed >= 290 and CurTime() >= owner:GetLastChargeHit() + 0.4 and owner:GetCarry() ~= GAMEMODE:GetBall() then
 			owner:SetState(STATE_DIVETACKLE)
+			
+		elseif speed <= 290 then
+			local state = STATE_BACKHAND
+		
+			owner:SetState(state, STATES[state].Time)
 		end
 	end
 end
