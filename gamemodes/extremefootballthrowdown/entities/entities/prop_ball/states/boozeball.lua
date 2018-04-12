@@ -1,60 +1,47 @@
 STATE.Name = "Booze Ball"
 
 if SERVER then
-	local function AddEffect(carrier)
-	
-	end
-
-	local function RemoveEffect(carrier)
-
-	end
 	
 	function STATE:Start(ball, samestate)
 		ball:EmitSound("vehicles/Airboat/pontoon_splash2.wav", 100, 110)
 		
 		local carrier = ball:GetCarrier()
-		if carrier:IsValid() then
-			AddEffect(carrier)
-		end
 	end
 
 	function STATE:End(ball)
 		ball:EmitSound("vehicles/Airboat/pontoon_impact_hard2.wav", 100, 170)
 		
 		local carrier = ball:GetCarrier()
-		if carrier:IsValid() then
-			RemoveEffect(carrier)
-		end
 	end
 	
 	function STATE:PhysicsCollide(ball, hitdata, phys)
-		if hitdata.Speed > 250 then
-			local ent = ents.Create("effect_boozeballimpact")
-
-			ang = hitdata.HitNormal:Angle()
-			
-			if ent:IsValid() then
-				ent:SetPos(ball:GetPos())
-				ent:SetAngles(Angle(ang.p-90,ang.y,ang.r))
-				ent:SetModelScale(hitdata.Speed / 225)
-				ent:Spawn()
-			end
-	
-			local effectdata = EffectData()
-				effectdata:SetOrigin(ball:GetPos())
-			util.Effect("exp_boozebottle", effectdata)
-		end
+		self.HitData = hitdata
 		phys:SetVelocityInstantaneous(Vector(hitdata.OurOldVelocity.x*0.87,hitdata.OurOldVelocity.y*0.87,hitdata.OurOldVelocity.z*-0.27))
 		return true
 	end
+	
+	function STATE:Think(ball)
+		local hitdata = self.HitData
+		if hitdata then
+			self.HitData = nil
 
-	function STATE:CarrierChanged(ball, newcarrier, oldcarrier)
-		if newcarrier:IsValid() and newcarrier:IsPlayer() then
-			AddEffect(newcarrier)
-		end
+			if hitdata.Speed >= 250 then
 
-		if oldcarrier:IsValid() and oldcarrier:IsPlayer() then
-			RemoveEffect(oldcarrier)
+				local ent = ents.Create("effect_boozeballimpact")
+
+				ang = hitdata.HitNormal:Angle()
+			
+				if ent:IsValid() then
+					ent:SetPos(ball:GetPos())
+					ent:SetAngles(Angle(ang.p-90,ang.y,ang.r))
+					ent:SetModelScale(hitdata.Speed / 225)
+					ent:Spawn()
+				end
+	
+				local effectdata = EffectData()
+					effectdata:SetOrigin(ball:GetPos())
+				util.Effect("exp_boozebottle", effectdata)
+			end
 		end
 	end
 end
