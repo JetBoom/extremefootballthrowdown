@@ -22,7 +22,7 @@ end
 
 function ENT:PrimaryAttack(pl)
 	if pl:CanMelee() then
-		pl:SetState(STATE_TRASHBINATTACK--[[, STATES[STATE_TRASHBINATTACK].Time]])
+		pl:SetState(STATE_TRASHBINATTACK, STATES[STATE_TRASHBINATTACK].Time)
 	end
 
 	return true
@@ -41,6 +41,24 @@ function ENT:Move(pl, move)
 	move:SetMaxClientSpeed(move:GetMaxClientSpeed() * 0.75)
 end
 
+local Translated = {
+	[ACT_MP_RUN] = ACT_HL2MP_RUN_MELEE,
+	[ACT_HL2MP_WALK_SUITCASE] = ACT_HL2MP_WALK_MELEE,
+	[ACT_MP_WALK] = ACT_HL2MP_WALK_MELEE,
+	[ACT_HL2MP_IDLE_MELEE_ANGRY] = ACT_HL2MP_IDLE_MELEE,
+	[ACT_HL2MP_IDLE_ANGRY] = ACT_HL2MP_IDLE_MELEE
+}
+function ENT:TranslateActivity(pl)
+	pl.CalcIdeal = Translated[pl.CalcIdeal] or pl.CalcIdeal
+end
+
+function ENT:DoAnimationEvent(pl, event, data)
+	if event == PLAYERANIMEVENT_ATTACK_PRIMARY then
+		pl:AnimRestartGesture(GESTURE_SLOT_ATTACK_AND_RELOAD, ACT_HL2MP_GESTURE_RANGE_ATTACK_MELEE, true)
+		return ACT_INVALID
+	end
+end
+
 function ENT:GetImpactSpeed()
 	return self:GetLastCarrier():IsValid() and 200 or 450
 end
@@ -51,15 +69,7 @@ function ENT:RefreshBoneName()
 	self.BoneName = carrier:IsValid() and carrier:IsPlayer() and carrier:GetState() == STATE_TRASHBINATTACK and "ValveBiped.Bip01_L_Hand" or "ValveBiped.Bip01_R_Hand"
 end
 
-if CLIENT then
-
-function ENT:OnThink()
-	self:RefreshBoneName()
-end
-
-return
-
-end
+if CLIENT then return end
 
 function ENT:OnThink()
 	self:RefreshBoneName()

@@ -13,8 +13,8 @@ ENT.ThrowForce = 550
 ENT.DropChance = 0.5
 
 ENT.BoneName = "ValveBiped.Bip01_R_Hand"
-ENT.AttachmentOffset = Vector(10, 15, 0)
-ENT.AttachmentAngles = Angle(90, 0, 90)
+ENT.AttachmentOffset = Vector(13, 5, 5)
+ENT.AttachmentAngles = Angle(0, 0, 180)
 
 function ENT:Initialize()
 	self.BaseClass.Initialize(self)
@@ -41,6 +41,24 @@ end
 function ENT:Move(pl, move)
 	move:SetMaxSpeed(move:GetMaxSpeed() * 0.6)
 	move:SetMaxClientSpeed(move:GetMaxClientSpeed() * 0.6)
+end
+
+local Translated = {
+	[ACT_MP_RUN] = ACT_HL2MP_RUN_SLAM,
+	[ACT_HL2MP_WALK_SUITCASE] = ACT_HL2MP_WALK_SLAM,
+	[ACT_MP_WALK] = ACT_HL2MP_WALK_SLAM,
+	[ACT_HL2MP_IDLE_MELEE_ANGRY] = ACT_HL2MP_IDLE_SLAM,
+	[ACT_HL2MP_IDLE_ANGRY] = ACT_HL2MP_IDLE_SLAM
+}
+function ENT:TranslateActivity(pl)
+	pl.CalcIdeal = Translated[pl.CalcIdeal] or pl.CalcIdeal
+end
+
+function ENT:DoAnimationEvent(pl, event, data)
+	if event == PLAYERANIMEVENT_ATTACK_PRIMARY then
+		pl:AnimRestartGesture(GESTURE_SLOT_ATTACK_AND_RELOAD, ACT_HL2MP_GESTURE_RANGE_ATTACK_SLAM, true)
+		return ACT_INVALID
+	end
 end
 
 function ENT:GetImpactSpeed()

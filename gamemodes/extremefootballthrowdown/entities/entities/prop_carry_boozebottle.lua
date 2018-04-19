@@ -112,7 +112,15 @@ function ENT:Explode(hitpos, hitnormal, hitent)
 
 		ent:Fire("break", "", 0)
 	end
-
+	
+	local ball = GAMEMODE:GetBall()
+	if ball:IsValid() and ball:GetState() == BALL_STATE_NONE then
+		local nearest = ball:NearestPoint(hitpos)
+		if nearest:DistToSqr(hitpos) <= 40000 and util.IsVisible(nearest, hitpos) then
+			ball:SetState(BALL_STATE_BOOZEBALL, 8)
+		end
+	end
+	
 	local effectdata = EffectData()
 		effectdata:SetOrigin(hitpos)
 	util.Effect("exp_boozebottle", effectdata)

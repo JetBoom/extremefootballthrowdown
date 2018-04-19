@@ -241,6 +241,8 @@
 		"scoreball"  : "Score Ball"
 		"iceball"    : "Ice Ball"
 		"gravityball": "Gravity Ball"
+		"boozeball"  : "Booze Ball"
+		"rubberball" : "Rubber Ball"
 	]
 	poweruptime(integer) : "Powerup Time" : 20 : "How long the ball is powered up."
 	
