@@ -4,6 +4,7 @@
 	"title"				"Extreme Football Throwdown"
 	"menusystem"		"1"
 	"maps"				"^xft_|^eft_"
+	"category"		"pvp"
 	"workshopid"		"104625632"
 
 	"selectable"		"1"
